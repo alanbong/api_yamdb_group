@@ -52,7 +52,9 @@ class Genres(models.Model):
 
 
 class Reviews(models.Model):
-    ...
+    ываываавыаывыва
+    ываываываываываф
+    фывафываasdasdas
 
 
 class Comments(models.Model):
