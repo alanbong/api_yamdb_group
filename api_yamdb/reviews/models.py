@@ -13,13 +13,22 @@ ROLE_CHOICES = [
 
 
 class User(AbstractUser):
-    role = models.CharField(choices=ROLE_CHOICES, max_length=20)
-    confirmation_code = models.CharField(max_length=20, blank=True)
-
-    def generate_confirmation_code(self):
-        """Генерирует новый уникальный код подтверждения."""
-        self.confirmation_code = str(uuid.uuid4())
-        self.save(update_fields=['confirmation_code'])
+    '''
+    Расширяет стандартную модель User, добавляя:
+    роли пользователей (user, moderator, admin)
+    поле bio для биографии.
+    '''
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='user',
+        help_text="Роль пользователя в системе."
+    )
+    bio = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Биография пользователя."
+    )
 
 
 class Categories(models.Model):
