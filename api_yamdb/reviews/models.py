@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import UniqueConstraint
+from django.forms import ValidationError
 
 
 RATING_CHOICES = [(i, i) for i in range(1, 11)]
@@ -103,6 +104,10 @@ class Review(models.Model):
         ]
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+
+    def clean(self):
+        if Review.objects.filter(author=self.author, title=self.title).exists():
+            raise ValidationError('Вы уже оставили отзыв на это произведение!')
 
     def __str__(self):
         return f'Ревью от {self.author} на {self.title}'
