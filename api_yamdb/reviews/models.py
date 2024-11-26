@@ -1,5 +1,3 @@
-import uuid
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -13,16 +11,25 @@ ROLE_CHOICES = [
 
 
 class User(AbstractUser):
-    role = models.CharField(choices=ROLE_CHOICES, max_length=20)
-    confirmation_code = models.CharField(max_length=20, blank=True)
+    '''
+    Расширяет стандартную модель User, добавляя:
+    роли пользователей (user, moderator, admin)
+    поле bio для биографии.
+    '''
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='user',
+        help_text="Роль пользователя в системе."
+    )
+    bio = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Биография пользователя."
+    )
 
-    def generate_confirmation_code(self):
-        """Генерирует новый уникальный код подтверждения."""
-        self.confirmation_code = str(uuid.uuid4())
-        self.save(update_fields=['confirmation_code'])
 
-
-class Categories(models.Model):
+class Category(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название')
     slug = models.SlugField(
         unique=True, max_length=50, verbose_name='Идентификатор')
@@ -35,7 +42,7 @@ class Categories(models.Model):
         return self.name[:50]
 
 
-class Genres(models.Model):
+class Genre(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название')
     slug = models.SlugField(
         unique=True, max_length=50, verbose_name='Идентификатор')
@@ -48,7 +55,7 @@ class Genres(models.Model):
         return self.name[:50]
 
 
-class Titles(models.Model):
+class Title(models.Model):
     category = models.ForeignKey(
         Categories, related_name='title',
         on_delete=models.CASCADE,
@@ -74,8 +81,8 @@ class Titles(models.Model):
         return self.name
 
 
-class Reviews(models.Model):
-    title_id = models.ForeignKey(Titles, related_name='reviews',
+class Review(models.Model):
+    title_id = models.ForeignKey(Title, related_name='reviews',
                                  on_delete=models.CASCADE,
                                  verbose_name='Произведение')
     text = models.CharField(max_length=256, verbose_name='Название')
@@ -96,12 +103,12 @@ class Reviews(models.Model):
         return f'Ревью от {self.author} на {self.title_id}'
 
 
-class Comments(models.Model):
+class Comment(models.Model):
     text = models.TextField(verbose_name='Текст комментария')
-    title_id = models.ForeignKey(Titles, related_name='comments',
+    title_id = models.ForeignKey(Title, related_name='comments',
                                  on_delete=models.CASCADE,
                                  verbose_name='Произведение')
-    review_id = models.ForeignKey(Reviews, related_name='comments',
+    review_id = models.ForeignKey(Review, related_name='comments',
                                   on_delete=models.CASCADE,
                                   verbose_name='Отзыв')
     author = models.ForeignKey(
