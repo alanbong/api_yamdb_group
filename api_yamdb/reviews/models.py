@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 
 
 RATING_CHOICES = [(i, i) for i in range(1, 11)]
@@ -27,6 +28,14 @@ class User(AbstractUser):
         null=True,
         help_text="Биография пользователя."
     )
+    email = models.EmailField(unique=True)
+    username = models.CharField(max_length=150, unique=True)
+
+    def validate_username(self):
+        if self.username.lower() == "me":
+            raise ValidationError(
+                "Нельзя использовать 'me' для поля username."
+            )
 
 
 class Category(models.Model):
