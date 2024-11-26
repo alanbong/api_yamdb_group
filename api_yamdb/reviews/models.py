@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import UniqueConstraint
 
 
 RATING_CHOICES = [(i, i) for i in range(1, 11)]
@@ -94,6 +95,12 @@ class Review(models.Model):
     )
 
     class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title_review'
+            ),
+        ]
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
 
