@@ -28,6 +28,7 @@ v1_router.register(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('api.urls')),
     path('api/v1/auth/signup/', SignUpView.as_view()),
     path('api/v1/', include(v1_router.urls)),
     path(
