@@ -34,7 +34,7 @@ class User(AbstractUser):
     def validate_username(self):
         if self.username.lower() == "me":
             raise ValidationError(
-                "Нельзя использовать 'me' для username."
+                "Нельзя использовать 'me' для поля username."
             )
 
 
