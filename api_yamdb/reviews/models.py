@@ -6,43 +6,53 @@ from django.core.exceptions import ValidationError
 
 
 RATING_CHOICES = [(i, i) for i in range(1, 11)]
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.core.exceptions import ValidationError
+
 ROLE_CHOICES = [
     ('user', 'User'),
     ('moderator', 'Moderator'),
     ('admin', 'Admin'),
 ]
 
-
 class CustomUser(AbstractUser):
-    '''
-    Расширяет стандартную модель User, добавляя:
-    роли пользователей (user, moderator, admin)
-    поле bio для биографии.
-    '''
+    """Кастомная модель пользователя."""
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
         default='user',
-        help_text="Роль пользователя в системе."
+        verbose_name='Роль'
     )
     bio = models.TextField(
         blank=True,
         null=True,
-        help_text="Биография пользователя."
+        verbose_name='Биография'
     )
-    email = models.EmailField(unique=True)
-    username = models.CharField(max_length=150, unique=True)
+    email = models.EmailField(
+        unique=True,
+        verbose_name='Email'
+    )
 
     def validate_username(self):
-        if self.username.lower() == "me":
-            raise ValidationError(
-                "Нельзя использовать 'me' для поля username."
-            )
+        if self.username.lower() == 'me':
+            raise ValidationError("Нельзя использовать 'me' в качестве имени пользователя.")
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin' or self.is_superuser
+
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'
 
     class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
-        # app_label = 'auth'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        return self.username
+
 
 
 class Category(models.Model):

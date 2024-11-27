@@ -12,14 +12,27 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.generics import get_object_or_404
 
-from reviews.models import Category, Title, Genre, Comment, Review
+from reviews.models import Category, Title, Genre, Comment, Review, CustomUser
 from .serializers import (CategorySerializer, TitleSerializer,
                           GenreSerializer, ReviewSerializer, CommentSerializer,
-                          SignupSerializer, TokenSerializer)
-from .permissions import OwnerOrReadOnly, IsAdminOrReadOnly, IsSuperUser
+                          SignupSerializer, TokenSerializer, CustomUserSerializer)
+from .permissions import OwnerOrReadOnly, IsAdminOrReadOnly, IsSuperUser, IsAdmin
+from rest_framework import permissions
 
 
 User = get_user_model()
+
+
+class CustomUserViewSet(viewsets.ModelViewSet):
+    """Вьюсет для управления пользователями."""
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def get_permissions(self):
+        if self.action in ['retrieve', 'update', 'partial_update']:
+            return [permissions.IsAuthenticated()]
+        return super().get_permissions()
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -96,46 +109,37 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class SignupView(APIView):
     """Регистрация пользователя и отправка confirmation_code."""
-    permission_classes = (AllowAny,)
+    permission_classes = []
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
         username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
 
         # Создание или получение пользователя
-        user, created = User.objects.get_or_create(
-            email=email, username=username
-        )
+        user, created = CustomUser.objects.get_or_create(username=username, email=email)
 
-        # Генерация нового confirmation_code
+        # Генерация confirmation code
         confirmation_code = default_token_generator.make_token(user)
 
-        # Отправка email
+        # Отправка email с confirmation code
         try:
             send_mail(
-                subject='Код подтверждения для YaMDB',
-                message=f'Ваш код подтверждения: {confirmation_code}',
+                subject="Код подтверждения для YaMDB",
+                message=f"Ваш код подтверждения: {confirmation_code}",
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
+                recipient_list=[email],
             )
         except Exception:
             return Response(
-                {'detail': 'Ошибка при отправке письма. Попробуйте позже.'},
+                {"detail": "Ошибка при отправке email. Попробуйте позже."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        detail_message = (
-            ('Пользователь успешно зарегистрирован. '
-             'Код подтверждения отправлен.')
-            if created
-            else ('Пользователь уже существует. '
-                  'Новый код подтверждения отправлен.')
-        )
-
+        # Возврат данных о созданном пользователе
         return Response(
-            {'detail': detail_message},
+            {"username": username, "email": email},
             status=status.HTTP_200_OK
         )
 
