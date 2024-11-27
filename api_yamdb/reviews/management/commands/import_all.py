@@ -86,7 +86,7 @@ class Command(BaseCommand):
                 ))
 
         Review.objects.bulk_create(reviews, ignore_conflicts=True)
-        self.stdout.write(self.style.SUCCESS('Импорт отзывов завершён'))
+        self.stdout.write(self.style.SUCCESS('Импорт отзывов завершён.'))
 
     def import_comments(self):
         file_path = 'static/data/comments.csv'
