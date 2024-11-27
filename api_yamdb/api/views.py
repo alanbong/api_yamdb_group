@@ -5,35 +5,36 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import title
-from rest_framework import status
+from rest_framework import status, viewsets, filters
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework import viewsets, filters
 from rest_framework.generics import get_object_or_404
 
-from reviews.models import Categories, Titles, Genres
-from .serializers import (CategoriesSerializer, TitlesSerializer, GenresSerializer, ReviewsSerializer, CommentSerializer, SignupSerializer, TokenSerializer)
+from reviews.models import Category, Title, Genre, Comment, Review
+from .serializers import (CategorySerializer, TitleSerializer, GenreSerializer, ReviewSerializer, CommentSerializer, SignupSerializer, TokenSerializer)
 from .permissions import OwnerOrReadOnly
 
 
 User = get_user_model()
 
 
-class CategoriesViewSet(viewsets.ReadOnlyModelViewSet):
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """Класс категорий."""
 
-    queryset = Categories.objects.all()
-    serializer_class = CategoriesSerializer
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
 
-class TitlesViewSet(viewsets.ModelViewSet):
+class TitleViewSet(viewsets.ModelViewSet):
     """Класс произведений."""
 
-    queryset = Titles.objects.all()
-    serializer_class = TitlesSerializer
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
     permission_classes = (OwnerOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('category', 'genre', 'name', 'year')
@@ -42,26 +43,26 @@ class TitlesViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class GenresViewSet(viewsets.ReadOnlyModelViewSet):
+class GenreViewSet(viewsets.ReadOnlyModelViewSet):
     """Класс жанров."""
 
-    queryset = Genres.objects.all()
-    serializer_class = GenresSerializer
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
 
-class ReviewsViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(viewsets.ModelViewSet):
     """Класс отзывов."""
 
     permission_classes = (OwnerOrReadOnly,)
-    serializer_class = ReviewsSerializer
+    serializer_class = ReviewSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title__id',)
 
     def get_title(self):
         """Возвращает объект Title по 'title_id'."""
-        return get_object_or_404(title, pk=self.kwargs['title_id'])
+        return get_object_or_404(Title, pk=self.kwargs['title_id'])
 
     def get_queryset(self):
         return self.get_title().reviews.all()
@@ -81,7 +82,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_review(self):
         """Возвращает объект Review по 'review_id'."""
-        return get_object_or_404(Reviews, pk=self.kwargs['review_id'])
+        return get_object_or_404(Review, pk=self.kwargs['review_id'])
 
     def get_queryset(self):
         return self.get_review().comment.all()
