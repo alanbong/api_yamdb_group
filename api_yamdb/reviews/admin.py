@@ -1,16 +1,23 @@
 """Настройки администратора"""
+from django import forms
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+from .models import CustomUser, Category, Genre, Title, ROLE_CHOICES
 
-from .models import CustomUser, Category, Genre, Title
+# class CustomUserForm(forms.ModelForm):
+#     class Meta:
+#         model = CustomUser
+#         fields = '__all__'
 
+#     role = forms.ChoiceField(choices=ROLE_CHOICES, label="Роль")
 
 @admin.register(CustomUser)
-class CustomUserAdmin(UserAdmin):
+class CustomUserAdmin(admin.ModelAdmin):
     """Настройка отображения кастомной модели пользователя в админке."""
+    # form = CustomUserForm  # Используем кастомную форму
     list_display = ('username', 'email', 'role', 'bio')
     list_filter = ('role',)
     search_fields = ('username', 'email')
+
 
 
 # CustomUser._meta.app_label = "auth"

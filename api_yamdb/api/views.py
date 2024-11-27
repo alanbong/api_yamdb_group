@@ -13,29 +13,31 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.generics import get_object_or_404
 
 from reviews.models import Category, Title, Genre, Comment, Review
-from .serializers import (CategorySerializer, TitleSerializer, GenreSerializer, ReviewSerializer, CommentSerializer, SignupSerializer, TokenSerializer)
-from .permissions import OwnerOrReadOnly
+from .serializers import (CategorySerializer, TitleSerializer,
+                          GenreSerializer, ReviewSerializer, CommentSerializer,
+                          SignupSerializer, TokenSerializer)
+from .permissions import OwnerOrReadOnly, IsAdminOrReadOnly, IsSuperUser
 
 
 User = get_user_model()
 
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+class CategoryViewSet(viewsets.ModelViewSet):
     """Класс категорий."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = AllowAny,
+    permission_classes = IsAdminOrReadOnly,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
 
-class TitleViewSet(viewsets.ReadOnlyModelViewSet):
+class TitleViewSet(viewsets.ModelViewSet):
     """Класс произведений."""
 
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = AllowAny,
+    permission_classes = (IsAdminOrReadOnly,),
     filter_backends = (filters.SearchFilter,)
     search_fields = ('category', 'genre', 'name', 'year')
 
@@ -43,12 +45,12 @@ class TitleViewSet(viewsets.ReadOnlyModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class GenreViewSet(viewsets.ReadOnlyModelViewSet):
+class GenreViewSet(viewsets.ModelViewSet):
     """Класс жанров."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = AllowAny,
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
@@ -141,6 +143,7 @@ class SignupView(APIView):
 class TokenView(APIView):
     """Получение JWT-токена на основе username и confirmation_code."""
     permission_classes = (AllowAny,)
+    # search_fields
 
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
