@@ -3,9 +3,18 @@ from django.contrib.auth import get_user_model
 from rest_framework.validators import UniqueTogetherValidator
 from datetime import datetime
 
-from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre
+from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre, CustomUser
 
 User = get_user_model()
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    """Сериализатор для CustomUser."""
+
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'username', 'email', 'role', 'bio', 'first_name', 'last_name')
+        read_only_fields = ('role',)
 
 
 class SignupSerializer(serializers.ModelSerializer):
