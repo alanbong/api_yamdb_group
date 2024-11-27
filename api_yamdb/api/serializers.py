@@ -19,15 +19,35 @@ class SignupSerializer(serializers.ModelSerializer):
     """Сериализатор для регистрации пользователя."""
     class Meta:
         model = CustomUser
-        fields = ('username', 'email')  # Указываем нужные поля из модели
+        fields = ('username', 'email')
 
-    def validate_username(self, value):
-        """Дополнительная валидация поля username."""
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                "Имя пользователя 'me' использовать запрещено."
-            )
-        return value
+    def is_valid(self, raise_exception=False):
+        """
+        Переопределяем метод is_valid для проверки существующего пользователя.
+        """
+        # Получаем данные из контекста
+        data = self.initial_data
+        username = data.get('username')
+        email = data.get('email')
+
+        # Проверяем, существует ли пользователь с таким username и email
+        user = CustomUser.objects.filter(username=username).first()
+        if user:
+            if user.email != email:
+                raise serializers.ValidationError(
+                    {
+                        'username': 'Пользователь с таким username уже существует, но email не совпадает.',
+                        'email': 'Пользователь с таким email уже существует, но username не совпадает.'
+                    }
+                )
+            # Если пользователь существует и email совпадает, добавляем сообщение в контекст
+            self._validated_data = {'username': username, 'email': email}
+            self.context['user_exists'] = True
+            return True
+
+        # Если пользователь не найден, вызываем стандартную проверку
+        return super().is_valid(raise_exception=raise_exception)
+
 
 
 class TokenSerializer(serializers.Serializer):

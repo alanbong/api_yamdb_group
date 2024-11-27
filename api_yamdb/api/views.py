@@ -100,7 +100,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (OwnerOrReadOnly,)
     serializer_class = CommentSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('title__id','reviews__id')
+    search_fields = ('title__id', 'reviews__id')
 
     def get_review(self):
         """Возвращает объект Review по 'review_id'."""
@@ -113,23 +113,20 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=self.get_review())
 
 
-
 class SignupView(APIView):
     """Регистрация пользователя и отправка confirmation_code."""
     permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
-        username = request.data['username']
-        email = request.data['email']
+        serializer.is_valid(raise_exception=True)
 
-        # Проверяем, существует ли пользователь
-        user = CustomUser.objects.filter(username=username, email=email).first()
-        if user:
-            # Генерация confirmation code
+        username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
+
+        if serializer.context.get('user_exists'):
+            user = CustomUser.objects.get(username=username, email=email)
             confirmation_code = default_token_generator.make_token(user)
-
-            # Отправка email
             try:
                 send_mail(
                     subject='Код подтверждения для YaMDB',
@@ -143,19 +140,14 @@ class SignupView(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             return Response(
-                {'message': 'Код подтверждения отправлен повторно.', 'username': username, 'email': email},
+                {'username': username, 'email': email},
                 status=status.HTTP_200_OK
             )
 
-        serializer.is_valid(raise_exception=True)
-
-        # Создаем нового пользователя
         user = CustomUser.objects.create(username=username, email=email)
 
-        # Генерация нового confirmation code
         confirmation_code = default_token_generator.make_token(user)
 
-        # Отправка confirmation code
         try:
             send_mail(
                 subject="Код подтверждения для YaMDB",
@@ -170,11 +162,9 @@ class SignupView(APIView):
             )
 
         return Response(
-            {'message': 'Пользователь успешно зарегистрирован. Код подтверждения отправлен на почту.', "username": username, "email": email},
+            {"username": username, "email": email},
             status=status.HTTP_200_OK
         )
-
-
 
 
 class TokenView(APIView):
