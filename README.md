@@ -40,23 +40,23 @@ api_yamdb
 
 2. Cоздайте и активируйте виртуальное окружение:
 
-  ### Windows
+  #### Windows
   ```
   python -m venv venv
   . venv/Scripts/activate
   ```
-  ### Linux/MacOS
+  #### Linux/MacOS
   ```
   python3 -m venv venv
   source venv/bin/activate
   ```
 
 3. Обновите версию pip
-  ### Windows
+  #### Windows
   ```
   python -m pip install --upgrade pip
   ```
-  ### Linux/MacOS
+  #### Linux/MacOS
   ```
   python3 -m pip install --upgrade pip
   ```
