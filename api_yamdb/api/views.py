@@ -27,7 +27,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin]
 
     def get_permissions(self):
         if self.action in ['retrieve', 'update', 'partial_update']:
