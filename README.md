@@ -28,47 +28,58 @@ api_yamdb
 
 ### Как запустить проект:
 
-Клонировать репозиторий и перейти в него в командной строке:
+1. Клонируйте репозиторий и перейдите в него в командной строке:
 
-```
-git clone git@github.com:Dauletnazarr/api_yamdb.git
-```
+  ```
+  git clone git@github.com:Dauletnazarr/api_yamdb.git
+  ```
 
-```
-cd api_yamdb
-```
+  ```
+  cd api_yamdb
+  ```
 
-Cоздать и активировать виртуальное окружение:
+2. Cоздайте и активируйте виртуальное окружение:
 
-```
-python -m venv venv
-```
+  ### Windows
+  ```
+  python -m venv venv
+  . venv/Scripts/activate
+  ```
+  ### Linux/MacOS
+  ```
+  python3 -m venv venv
+  source venv/bin/activate
+  ```
 
-```
-source venv/Scripts/activate
-```
+3. Обновите версию pip
+  ### Windows
+  ```
+  python -m pip install --upgrade pip
+  ```
+  ### Linux/MacOS
+  ```
+  python3 -m pip install --upgrade pip
+  ```
 
-```
-python -m pip install --upgrade pip
-```
+4. Установите зависимости из файла requirements.txt:
+  ```
+  pip install -r requirements.txt
+  ```
 
-Установить зависимости из файла requirements.txt:
+5. Выполните миграции:
 
-```
-pip install -r requirements.txt
-```
+  ```
+  python manage.py migrate
+  ```
 
-Выполнить миграции:
+6. Запустите проект:
 
-```
-python manage.py migrate
-```
+  ```
+  python manage.py runserver
+  ```
+  
+7. Опционально. После запуска сервера полная версия документации доступна будет доступна [здесь](http://127.0.0.1:8000/redoc/)
 
-Запустить проект:
-
-```
-python manage.py runserver
-```
 ### Примеры запросов к API:
 
 Получить список всех произведений:
