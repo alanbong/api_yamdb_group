@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
@@ -24,6 +24,7 @@ v1_router.register(
     CommentViewSet, basename='title-comments')
 
 urlpatterns = [
+    path('', include(v1_router.urls)),
     path('auth/signup/', SignupView.as_view(), name='signup'),
     path('auth/token/', TokenView.as_view(), name='token'),
 ]
