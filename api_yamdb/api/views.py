@@ -16,7 +16,7 @@ from reviews.models import Category, Title, Genre, Comment, Review, CustomUser
 from .serializers import (CategorySerializer, TitleSerializer,
                           GenreSerializer, ReviewSerializer, CommentSerializer,
                           SignupSerializer, TokenSerializer, CustomUserSerializer)
-from .permissions import OwnerOrReadOnly, IsAdminOrReadOnly, IsSuperUser, IsAdmin
+from .permissions import OwnerOrReadOnly, IsAdminOrReadOnly, IsSuperUser, IsAdmin, IsModeratorOrReadOnly, IsOwnerOrAdmin, IsAuthenticatedOrReadOnly
 from rest_framework import permissions
 
 
@@ -63,7 +63,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsOwnerOrAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
