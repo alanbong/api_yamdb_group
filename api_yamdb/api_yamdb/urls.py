@@ -28,8 +28,9 @@ from rest_framework.routers import DefaultRouter
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('api/v1/auth/signup/', SignUpView.as_view()),
-    # path('api/v1/', include(v1_router.urls)),
+    path('api/', include('api.urls')),
+    path('api/v1/auth/signup/', SignUpView.as_view()),
+    path('api/v1/', include(v1_router.urls)),
     path(
         'redoc/',
         TemplateView.as_view(template_name='redoc.html'),
