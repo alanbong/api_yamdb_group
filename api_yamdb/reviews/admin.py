@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User
+from .models import CustomUser
 
-@admin.register(User)
+@admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     """Настройка отображения кастомной модели пользователя в админке."""
     list_display = ('username', 'email', 'role', 'bio')
@@ -11,4 +11,4 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ('username', 'email')
 
 
-User._meta.app_label = "auth"
+# CustomUser._meta.app_label = "auth"
