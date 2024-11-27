@@ -14,7 +14,9 @@ ROLE_CHOICES = [
     ('user', 'User'),
     ('moderator', 'Moderator'),
     ('admin', 'Admin'),
+    ('superuser', 'Superuser'),
 ]
+
 
 class CustomUser(AbstractUser):
     """Кастомная модель пользователя."""
@@ -40,7 +42,7 @@ class CustomUser(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == 'admin' or self.is_superuser
+        return self.role == 'admin' or self.role == 'superuser'
 
     @property
     def is_moderator(self):
@@ -52,7 +54,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
-
 
 
 class Category(models.Model):
