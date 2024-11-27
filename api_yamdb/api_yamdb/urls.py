@@ -11,7 +11,7 @@ from rest_framework.routers import DefaultRouter
 #     ReviewViewSet,
 #     UserViewSet,
 #     SignUpView,
-# )
+
 
 # v1_router = DefaultRouter()
 # v1_router.register('categories', CategoryViewSet, basename='category')
