@@ -38,7 +38,7 @@ class TokenSerializer(serializers.Serializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для категории."""
-    
+
     class Meta:
         model = Category
         fields = ('name', 'slug')
@@ -67,11 +67,11 @@ class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для произведений."""
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
-    # rating = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category')
         validators = [
             UniqueTogetherValidator(
                 queryset=Title.objects.all(),
@@ -87,13 +87,13 @@ class TitleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Год выпуска не может быть больше текущего!')
         return value
 
-    # def get_rating(self, obj):
-    #     reviews = obj.reviews.all()
-    #     num_score = reviews.count
-    #     if num_score == 0:
-    #         return 0
-    #     all_score = sum(review.score for review in reviews)
-    #     return round(all_score / num_score, 0)
+    def get_rating(self, obj):
+        reviews = obj.reviews.all()
+        num_score = reviews.count()
+        if num_score == 0:
+            return 0
+        all_score = sum(review.score for review in reviews)
+        return round(all_score / num_score, 0)
     
     def create(self, validated_data):
         genres = validated_data.pop('genre')

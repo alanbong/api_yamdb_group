@@ -39,6 +39,10 @@ class User(AbstractUser):
                 "Нельзя использовать 'me' для поля username."
             )
 
+    class Meta:
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
+
 
 class Category(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название')
