@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import title
 from rest_framework import status, viewsets, filters
+from rest_framework.pagination import LimitOffsetPagination, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
@@ -91,6 +92,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class SignupView(APIView):
     """Регистрация пользователя и отправка confirmation_code."""
+    permission_classes = (AllowAny,)
+
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
