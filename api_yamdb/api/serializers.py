@@ -11,7 +11,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'role', 'bio', 'first_name', 'last_name')
+        fields = ('username', 'email', 'role', 'bio', 'first_name', 'last_name')
         read_only_fields = ('role',)
 
 

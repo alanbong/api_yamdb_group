@@ -19,6 +19,7 @@ from .serializers import (CategorySerializer, TitleSerializer,
                           SignupSerializer, TokenSerializer, CustomUserSerializer)
 from .permissions import OwnerOrReadOnly, IsAdminOrReadOnly, IsSuperUser, IsAdmin, IsModeratorOrReadOnly, IsOwnerOrAdmin, IsAuthenticatedOrReadOnly
 from rest_framework import permissions
+from rest_framework.filters import SearchFilter
 
 
 User = get_user_model()
@@ -29,6 +30,8 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = [IsAdmin]
+    filter_backends = [SearchFilter]
+    search_fields = ['username', 'email']
     lookup_field = 'username'
 
     def get_permissions(self):
@@ -42,7 +45,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -110,23 +113,49 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=self.get_review())
 
 
+
 class SignupView(APIView):
     """Регистрация пользователя и отправка confirmation_code."""
-    permission_classes = [AllowAny]
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
+        username = request.data['username']
+        email = request.data['email']
+
+        # Проверяем, существует ли пользователь
+        user = CustomUser.objects.filter(username=username, email=email).first()
+        if user:
+            # Генерация confirmation code
+            confirmation_code = default_token_generator.make_token(user)
+
+            # Отправка email
+            try:
+                send_mail(
+                    subject='Код подтверждения для YaMDB',
+                    message=f'Ваш код подтверждения: {confirmation_code}',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                )
+            except Exception:
+                return Response(
+                    {'detail': 'Ошибка при отправке письма. Попробуйте позже.'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            return Response(
+                {'message': 'Код подтверждения отправлен повторно.', 'username': username, 'email': email},
+                status=status.HTTP_200_OK
+            )
+
         serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data['username']
-        email = serializer.validated_data['email']
 
-        # Создание или получение пользователя
-        user, created = CustomUser.objects.get_or_create(username=username, email=email)
+        # Создаем нового пользователя
+        user = CustomUser.objects.create(username=username, email=email)
 
-        # Генерация confirmation code
+        # Генерация нового confirmation code
         confirmation_code = default_token_generator.make_token(user)
 
-        # Отправка email с confirmation code
+        # Отправка confirmation code
         try:
             send_mail(
                 subject="Код подтверждения для YaMDB",
@@ -134,17 +163,18 @@ class SignupView(APIView):
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
             )
-        except Exception:
+        except Exception as e:
             return Response(
-                {"detail": "Ошибка при отправке email. Попробуйте позже."},
+                {"detail": f"Ошибка при отправке email: {str(e)}. Попробуйте позже."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # Возврат данных о созданном пользователе
         return Response(
-            {"username": username, "email": email},
+            {'message': 'Пользователь успешно зарегистрирован. Код подтверждения отправлен на почту.', "username": username, "email": email},
             status=status.HTTP_200_OK
         )
+
+
 
 
 class TokenView(APIView):
