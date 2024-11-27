@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import UniqueConstraint
@@ -13,7 +14,7 @@ ROLE_CHOICES = [
 ]
 
 
-class User(AbstractUser):
+class CustomUser(AbstractUser):
     '''
     Расширяет стандартную модель User, добавляя:
     роли пользователей (user, moderator, admin)
@@ -42,6 +43,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
+        app_label = 'auth'
 
 
 class Category(models.Model):
@@ -137,7 +139,7 @@ class Review(models.Model):
     text = models.CharField(max_length=256, verbose_name='Название')
     score = models.IntegerField(choices=RATING_CHOICES)
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name='Автор')
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Автор')
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата создания'
     )
@@ -171,7 +173,7 @@ class Comment(models.Model):
                                on_delete=models.CASCADE,
                                verbose_name='Отзыв')
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name='Автор')
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Автор')
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата создания'
     )

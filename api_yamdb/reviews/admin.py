@@ -31,14 +31,15 @@ class TitleAdmin(admin.ModelAdmin):
         return ", ".join([genre.name for genre in obj.genre.all()])
 
     display_genres.short_description = 'Жанры'
+  
 
-    
+@admin.register(CustomUser)
+
 class CustomUserAdmin(UserAdmin):
     """Настройка отображения кастомной модели пользователя в админке."""
     list_display = ('username', 'email', 'role', 'bio')
     list_filter = ('role',)
     search_fields = ('username', 'email')
 
-
-User._meta.app_label = "auth"
-
+    
+# CustomUser._meta.app_label = "auth"
