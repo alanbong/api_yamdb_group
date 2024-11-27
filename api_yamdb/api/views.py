@@ -139,6 +139,8 @@ class SignupView(APIView):
 
 class TokenView(APIView):
     """Получение JWT-токена на основе username и confirmation_code."""
+    permission_classes = (AllowAny,)
+
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
