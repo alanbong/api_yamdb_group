@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import UniqueConstraint
+from django.forms import ValidationError
 from django.core.exceptions import ValidationError
 
 
@@ -66,12 +68,17 @@ class Genre(models.Model):
 
 class Title(models.Model):
     category = models.ForeignKey(
-        Category, related_name='title',
+        'Category',
         on_delete=models.CASCADE,
-        verbose_name='Категория')
+        verbose_name='Категория',
+        related_name='titles'
+    )
     genre = models.ManyToManyField(
-        Genre, related_name='title',
-        verbose_name='Жанр')
+        'Genre',
+        through='TitleGenre',
+        verbose_name='Жанры',
+        related_name='titles'
+    )
     name = models.CharField(max_length=256)
     description = models.TextField(
         blank=True, null=True, verbose_name='Описание')
@@ -90,6 +97,35 @@ class Title(models.Model):
         return self.name
 
 
+class TitleGenre(models.Model):
+    title = models.ForeignKey(
+        'Title',
+        on_delete=models.CASCADE,
+        verbose_name='Произведение',
+        related_name='title_genres'
+    )
+    genre = models.ForeignKey(
+        'Genre',
+        on_delete=models.CASCADE,
+        verbose_name='Жанр',
+        related_name='genre_titles'
+    )
+
+    class Meta:
+        db_table = 'reviews_titlegenre'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'genre'],
+                name='unique_title_genre'
+            )
+        ]
+        verbose_name = 'Связь произведение-жанр'
+        verbose_name_plural = 'Связи произведение-жанр'
+
+    def __str__(self):
+        return f'{self.title} - {self.genre}'
+
+
 class Review(models.Model):
     title = models.ForeignKey(Title, related_name='reviews',
                               on_delete=models.CASCADE,
@@ -103,8 +139,20 @@ class Review(models.Model):
     )
 
     class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title_review'
+            ),
+        ]
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+
+    def clean(self):
+        if Review.objects.filter(
+            author=self.author, title=self.title
+        ).exists():
+            raise ValidationError('Вы уже оставили отзыв на это произведение!')
 
     def __str__(self):
         return f'Ревью от {self.author} на {self.title}'
