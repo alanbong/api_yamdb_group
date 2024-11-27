@@ -38,7 +38,7 @@ class TokenSerializer(serializers.Serializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для категории."""
-    
+
     class Meta:
         model = Category
         fields = ('name', 'slug')
