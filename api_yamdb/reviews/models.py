@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 from django.core.exceptions import ValidationError
 
 
@@ -91,12 +91,10 @@ class Title(models.Model):
 
 
 class Review(models.Model):
-    title_id = models.ForeignKey(Title, related_name='reviews',
-                                 on_delete=models.CASCADE,
-                                 verbose_name='Произведение')
+    title = models.ForeignKey(Title, related_name='reviews',
+                              on_delete=models.CASCADE,
+                              verbose_name='Произведение')
     text = models.CharField(max_length=256, verbose_name='Название')
-    slug = models.SlugField(
-        unique=True, max_length=50, verbose_name='Идентификатор')
     score = models.IntegerField(choices=RATING_CHOICES)
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name='Автор')
@@ -109,17 +107,17 @@ class Review(models.Model):
         verbose_name_plural = 'Отзывы'
 
     def __str__(self):
-        return f'Ревью от {self.author} на {self.title_id}'
+        return f'Ревью от {self.author} на {self.title}'
 
 
 class Comment(models.Model):
     text = models.TextField(verbose_name='Текст комментария')
-    title_id = models.ForeignKey(Title, related_name='comments',
-                                 on_delete=models.CASCADE,
-                                 verbose_name='Произведение')
-    review_id = models.ForeignKey(Review, related_name='comments',
-                                  on_delete=models.CASCADE,
-                                  verbose_name='Отзыв')
+    title = models.ForeignKey(Title, related_name='comments',
+                              on_delete=models.CASCADE,
+                              verbose_name='Произведение')
+    review = models.ForeignKey(Review, related_name='comments',
+                               on_delete=models.CASCADE,
+                               verbose_name='Отзыв')
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name='Автор')
     pub_date = models.DateTimeField(
@@ -131,4 +129,4 @@ class Comment(models.Model):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return f'Комментарий от {self.author} на {self.review_id}'
+        return f'Комментарий от {self.author} на {self.review}'
