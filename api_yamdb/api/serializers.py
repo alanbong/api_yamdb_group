@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework.validators import UniqueTogetherValidator
+from datetime import datetime
 
 from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre
 
@@ -66,6 +67,7 @@ class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для произведений."""
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
@@ -78,17 +80,43 @@ class TitleSerializer(serializers.ModelSerializer):
             )
         ] 
     
+    def validate_year(self, value):
+        """Проверка, что год выпуска не больше текущего."""
+        current_year = datetime.now().year
+        if value > current_year:
+            raise serializers.ValidationError('Год выпуска не может быть больше текущего!')
+        return value
+
+    def get_rating(self, obj):
+        reviews = obj.revievs.all()
+        num_score = reviews.count
+        if num_score == 0:
+            return 0
+        all_score = sum(review.score for review in reviews)
+        return round(all_score/num_score, 0)
+    
     def create(self, validated_data):
         genres = validated_data.pop('genre')
-        category = validated_data.pop('category')
-        current_category, _ = Category.objects.get_or_create(**category)
-        validated_data['category'] = current_category
         title = Title.objects.create(**validated_data)
         for genre in genres:
-            current_genre, _ = Genre.objects.get_or_create(**genre)
+            current_genre = Genre.objects.get(**genre)
             TitleGenre.objects.create(
                 genre=current_genre, title=title)
         return title
+    
+    def update(self, instance, validated_data):
+        genres = validated_data.pop('genre', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)      
+        instance.save()
+
+        if genres is not None:
+            instance.genres.clear()
+            for genre in genres:
+                current_genre = Genre.objects.get(genre)
+                TitleGenre.objects.create(genre=current_genre, title=instance)
+
+        return instance
 
 
 class ReviewSerializer(serializers.ModelSerializer):
