@@ -1,12 +1,11 @@
+"""Вью сеты апи"""
 from django.conf import settings
 from django.contrib.auth import get_user_model
 
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django.template.defaultfilters import title
 from rest_framework import status, viewsets, filters
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,17 +25,17 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = AllowAny,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
 
-class TitleViewSet(viewsets.ModelViewSet):
+class TitleViewSet(viewsets.ReadOnlyModelViewSet):
     """Класс произведений."""
 
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (OwnerOrReadOnly,)
+    permission_classes = AllowAny,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('category', 'genre', 'name', 'year')
 
@@ -49,6 +48,7 @@ class GenreViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = AllowAny,
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
