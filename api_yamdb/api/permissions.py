@@ -1,38 +1,4 @@
-from rest_framework import permissions
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, BasePermission, SAFE_METHODS
-
-
-class IsAdmin(BasePermission):
-    """Доступ только для администратора."""
-
-    def has_permission(self, request, view):
-        if not request.user.is_admin:
-            print('бляяяя')
-        return request.user.is_authenticated and (request.user.is_admin or request.user.is_superuser)
-
-
-class IsModeratorOrReadOnly(BasePermission):
-    """Доступ для модераторов или только чтение."""
-
-    def has_permission(self, request, view):
-        if request.method in SAFE_METHODS:
-            return True
-        return request.user.is_authenticated and request.user.is_moderator
-
-
-class IsOwnerOrAdmin(BasePermission):
-    """Доступ только владельцу объекта или админу."""
-
-    def has_object_permission(self, request, view, obj):
-        return obj == request.user or request.user.is_admin
-
-
-
-class OwnerOrReadOnly(IsAuthenticatedOrReadOnly):
-
-    def has_object_permission(self, request, view, post):
-        return (request.method in permissions.SAFE_METHODS
-                or post.author == request.user)
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
 class IsAdminOrReadOnly(BasePermission):
@@ -41,15 +7,43 @@ class IsAdminOrReadOnly(BasePermission):
     """
 
     def has_permission(self, request, view):
+        # Разрешаем доступ для всех пользователей для безопасных методов
         if request.method in SAFE_METHODS:
             return True
-        return request.user and request.user.is_staff
+
+        # Если пользователь анонимный, не проверяем его роль
+        if not request.user.is_authenticated:
+            return False
+
+        # Для методов POST, PUT, DELETE проверяем роль пользователя
+        if request.user.is_superuser or request.user.role == 'admin':
+            return True
+
+        return False
 
 
-class IsSuperUser(BasePermission):
+class CommentsPermission(BasePermission):
     """
-    Доступ только для суперпользователей.
+    Доступ для чтения всем, а для редактирования стафу и автору
     """
 
     def has_permission(self, request, view):
-        return request.user and request.user.is_superuser
+        # Просмотр комментариев и отдельных комментариев доступен всем
+        if request.method in SAFE_METHODS:
+            return True
+
+        # Если пользователь анонимный, не проверяем его роль
+        if not request.user.is_authenticated:
+            return False
+
+        # Создание комментария доступно всем, кроме анонимных пользователей
+        if request.method == 'POST':
+            return request.user.is_authenticated
+
+        # Проверка является ли пользователь автором, модератором или админом
+        if request.method in ['PUT', 'PATCH', 'DELETE']:
+            comment = view.get_object()  # Получаем объект комментария
+            if (request.user == comment.author or request.user.is_staff
+                    or request.user.is_superuser):
+                return True
+        return False

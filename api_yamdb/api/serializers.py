@@ -13,7 +13,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'role', 'bio', 'first_name', 'last_name')
+        fields = ('username', 'email', 'role', 'bio', 'first_name', 'last_name')
         read_only_fields = ('role',)
 
 
@@ -74,8 +74,11 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для произведений."""
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
+    genre = serializers.SlugRelatedField(slug_field='slug',
+                                         queryset=Genre.objects.all(),
+                                         many=True)
+    category = serializers.SlugRelatedField(slug_field='slug',
+                                            queryset=Category.objects.all())
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -85,7 +88,8 @@ class TitleSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=Title.objects.all(),
                 fields=('name', 'category'),
-                message='Такое произведение уже присутствует в указанной категории!'
+                message='Такое произведение уже '
+                        'присутствует в указанной категории!'
             )
         ] 
     
@@ -93,24 +97,39 @@ class TitleSerializer(serializers.ModelSerializer):
         """Проверка, что год выпуска не больше текущего."""
         current_year = datetime.now().year
         if value > current_year:
-            raise serializers.ValidationError('Год выпуска не может быть больше текущего!')
+            raise serializers.ValidationError(
+                'Год выпуска не может быть больше текущего!'
+            )
         return value
 
     def get_rating(self, obj):
         reviews = obj.reviews.all()
         num_score = reviews.count()
         if num_score == 0:
-            return 0
+            return None
         all_score = sum(review.score for review in reviews)
         return round(all_score / num_score, 0)
-    
+
     def create(self, validated_data):
         genres = validated_data.pop('genre')
-        title = Title.objects.create(**validated_data)
+        category_slug = validated_data.pop('category_slug', None)  # Извлекаем слаг категории, если он есть
+        title = Title.objects.create(**validated_data)  # Создаем объект Title
+
+        # Если слаг категории передан, находим категорию по слагу и сохраняем его в title
+        if category_slug:
+            category = Category.objects.get(slug=category_slug)
+            title.category = category
+            title.save()
+
+        # Итерируем по объектам жанра
         for genre in genres:
-            current_genre = Genre.objects.get(**genre)
+            # genre здесь уже объект Genre, а не словарь
+            genre_slug = genre.slug  # Просто получаем слаг жанра
+            current_genre = Genre.objects.get(
+                slug=genre_slug)  # Ищем жанр по слагу
             TitleGenre.objects.create(
-                genre=current_genre, title=title)
+                genre=current_genre, title=title)  # Связываем жанр с title
+
         return title
     
     def update(self, instance, validated_data):
@@ -136,7 +155,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Review
-        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        fields = ('text', 'author', 'score', 'pub_date')
         validators = [
             UniqueTogetherValidator(
                 queryset=Review.objects.all(),
