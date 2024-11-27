@@ -6,9 +6,7 @@ class IsAdmin(BasePermission):
     """Доступ только для администратора."""
 
     def has_permission(self, request, view):
-        if not request.user.is_admin:
-            print('бляяяя')
-        return request.user.is_authenticated and (request.user.is_admin or request.user.is_superuser)
+        return request.user.is_authenticated and request.user.is_admin
 
 
 class IsModeratorOrReadOnly(BasePermission):

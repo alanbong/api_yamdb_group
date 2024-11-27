@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.generics import get_object_or_404
+from rest_framework.decorators import action
 
 from reviews.models import Category, Title, Genre, Comment, Review, CustomUser
 from .serializers import (CategorySerializer, TitleSerializer,
@@ -28,6 +29,7 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = [IsAdmin]
+    lookup_field = 'username'
 
     def get_permissions(self):
         if self.action in ['retrieve', 'update', 'partial_update']:
@@ -40,9 +42,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = IsAdminOrReadOnly,
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -50,9 +53,10 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (IsAdminOrReadOnly,),
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('category', 'genre', 'name', 'year')
+    lookup_field = 'name'
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -63,9 +67,8 @@ class GenreViewSet(viewsets.ModelViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsOwnerOrAdmin,)
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -109,7 +112,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class SignupView(APIView):
     """Регистрация пользователя и отправка confirmation_code."""
-    permission_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)

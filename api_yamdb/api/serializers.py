@@ -5,8 +5,6 @@ from datetime import datetime
 
 from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre, CustomUser
 
-User = get_user_model()
-
 
 class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор для CustomUser."""
@@ -20,7 +18,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class SignupSerializer(serializers.ModelSerializer):
     """Сериализатор для регистрации пользователя."""
     class Meta:
-        model = User
+        model = CustomUser
         fields = ('username', 'email')  # Указываем нужные поля из модели
 
     def validate_username(self, value):
