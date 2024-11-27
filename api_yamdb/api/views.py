@@ -6,8 +6,7 @@ from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import title
 from rest_framework import status, viewsets, filters
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny
+from rest_framework.pagination import LimitOffsetPagination, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
@@ -26,7 +25,6 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
