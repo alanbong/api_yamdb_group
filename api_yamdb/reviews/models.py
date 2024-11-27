@@ -2,7 +2,6 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import UniqueConstraint
-from django.forms import ValidationError
 from django.core.exceptions import ValidationError
 
 
@@ -43,7 +42,7 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
-        app_label = 'auth'
+        # app_label = 'auth'
 
 
 class Category(models.Model):
