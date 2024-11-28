@@ -9,7 +9,7 @@ class IsAdmin(BasePermission):
         return request.user.is_authenticated and request.user.is_admin
 
 
-class IsModeratorOrReadOnly(BasePermission):
+class IsAdminOrReadOnly(BasePermission):
     """Доступ для модераторов или только чтение."""
 
     def has_permission(self, request, view):
