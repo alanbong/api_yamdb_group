@@ -124,27 +124,7 @@ class SignupView(APIView):
         username = serializer.validated_data['username']
         email = serializer.validated_data['email']
 
-        if serializer.context.get('user_exists'):
-            user = CustomUser.objects.get(username=username, email=email)
-            confirmation_code = default_token_generator.make_token(user)
-            try:
-                send_mail(
-                    subject='Код подтверждения для YaMDB',
-                    message=f'Ваш код подтверждения: {confirmation_code}',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                )
-            except Exception:
-                return Response(
-                    {'detail': 'Ошибка при отправке письма. Попробуйте позже.'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-            return Response(
-                {'username': username, 'email': email},
-                status=status.HTTP_200_OK
-            )
-
-        user = CustomUser.objects.create(username=username, email=email)
+        user, _ = User.objects.get_or_create(username=username, email=email)
 
         confirmation_code = default_token_generator.make_token(user)
 
