@@ -124,7 +124,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 5,  # Количество объектов на одну страницу
+    'PAGE_SIZE': 10,  # Количество объектов на одну страницу
 }
 
 SIMPLE_JWT = {
