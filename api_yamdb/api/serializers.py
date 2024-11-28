@@ -1,3 +1,6 @@
+import re
+
+from django.core.validators import RegexValidator
 from rest_framework import serializers
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -9,6 +12,7 @@ from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre, 
 
 User = get_user_model()
 
+
 class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор для CustomUser."""
 
@@ -19,8 +23,17 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    username = serializers.CharField(max_length=150, required=True)
+    email = serializers.EmailField(max_length=254, required=True)
+    username = serializers.CharField(
+        max_length=150,
+        required=True,
+        validators=[
+                RegexValidator(
+                regex=r'^[\w.@+-]+\Z',
+                message='Username может содержать только буквы, цифры и символы @/./+/-/_'
+            )
+        ]
+    )
 
     def validate_username(self, value):
         """
