@@ -1,4 +1,5 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission, SAFE_METHODS, AllowAny
+
 
 
 
@@ -52,3 +53,17 @@ class CommentsPermission(BasePermission):
             if (request.user == comment.author or request.user.is_moderator or request.user.is_admin):
                 return True
         return False
+
+
+class UserMePermissions(AllowAny):
+
+    def has_permission(self, request, view):
+
+        if request.method in SAFE_METHODS:
+            return True
+
+        if request.method in ['POST', 'PATCH']:
+            return request.user.role in ['user', 'moderator', 'admin']
+
+        if request.method == 'DELETE':
+            return request.user.role in ['moderator', 'admin']
