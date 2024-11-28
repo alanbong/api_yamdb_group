@@ -44,7 +44,7 @@ class UserMeViewSet(UpdateModelMixin, GenericViewSet):
     """
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes = [IsAuthenticated, IsUserOrReadOnly]
+    permission_classes = [CommentsPermission]
 
     def get_object(self):
         return self.request.user

@@ -14,7 +14,6 @@ ROLE_CHOICES = [
     ('user', 'User'),
     ('moderator', 'Moderator'),
     ('admin', 'Admin'),
-    ('superuser', 'Superuser'),
 ]
 
 
@@ -42,7 +41,7 @@ class CustomUser(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == 'admin' or self.role == 'superuser'
+        return self.role == 'admin' or self.is_superuser
 
     @property
     def is_moderator(self):
