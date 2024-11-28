@@ -1,8 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS, AllowAny
 
 
-
-
 class IsAdmin(BasePermission):
     """Доступ только для администратора."""
 
@@ -31,28 +29,34 @@ class IsAdminOrReadOnly(BasePermission):
 
 class CommentsPermission(BasePermission):
     """
-    Доступ для чтения всем, а для редактирования стафу и автору
+    Доступ для чтения всем, а для редактирования автору, модератору или администратору.
     """
-
     def has_permission(self, request, view):
-        # Просмотр комментариев и отдельных комментариев доступен всем
+        # Чтение доступно всем
         if request.method in SAFE_METHODS:
             return True
 
-        # Если пользователь анонимный, не проверяем его роль
+        # Для методов записи/обновления/удаления проверяем аутентификацию
         if not request.user.is_authenticated:
             return False
 
-        # Создание комментария доступно всем, кроме анонимных пользователей
-        if request.method == 'POST' and request.user.is_authenticated:
-            return True
+        # Дополнительная проверка объекта для методов, требующих его
+        if request.method in ('PATCH', 'DELETE'):
+            # Получаем объект через `get_object` во ViewSet
+            obj = view.get_object()
 
-        # Проверка является ли пользователь автором, модератором или админом
-        if request.method in ['PUT', 'PATCH', 'DELETE']:
-            comment = view.get_object()  # Получаем объект комментария
-            if (request.user == comment.author or request.user.is_moderator or request.user.is_admin):
+            # Проверяем, является ли пользователь автором, модератором или администратором
+            if obj.author == request.user:
                 return True
-        return False
+            if getattr(request.user, 'is_moderator', False):
+                return True
+            if getattr(request.user, 'is_admin', False):
+                return True
+
+            # Если пользователь не имеет прав, возвращаем False
+            return False
+
+        return True
 
 
 class UserMePermissions(AllowAny):
