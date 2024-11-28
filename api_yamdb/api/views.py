@@ -29,17 +29,29 @@ User = get_user_model()
 
 class CustomUserViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
-    queryset = CustomUser.objects.all().order_by('username')
+    queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = [IsAdmin]
     filter_backends = [SearchFilter]
     search_fields = ['username', 'email']
     lookup_field = 'username'
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
-    def get_permissions(self):
-        if self.action in ['retrieve', 'update', 'partial_update']:
-            return [permissions.IsAuthenticated()]
-        return super().get_permissions()
+
+class UserMeViewSet(UpdateModelMixin, GenericViewSet):
+    """
+    Эндпоинт для изменения профиля.
+    """
+    queryset = User.objects.all()
+    serializer_class = CustomUserSerializer
+    permission_classes = [IsAuthenticated, IsUserOrReadOnly]
+
+    def get_object(self):
+        return self.request.user
+
+    def perform_update(self, serializer):
+        serializer.validated_data.pop('role', None)
+        serializer.save()
 
 
 class CategoryViewSet(mixins.ListModelMixin,
