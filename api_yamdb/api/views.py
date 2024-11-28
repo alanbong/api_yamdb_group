@@ -45,6 +45,7 @@ class UserMeViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = [UserMePermissions]
+    http_method_names = ['get', 'patch']
 
     def get_object(self):
         return self.request.user

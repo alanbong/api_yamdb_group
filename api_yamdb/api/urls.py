@@ -27,7 +27,7 @@ v1_router.register(
     CommentViewSet, basename='title-comments')
 
 urlpatterns = [
-    path('users/me/', UserMeViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update'}), name='users-me'),
+    path('users/me/', UserMeViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'}), name='users-me'),
     path('', include(v1_router.urls)),
     path('auth/signup/', SignupView.as_view(), name='signup'),
     path('auth/token/', TokenView.as_view(), name='token'),

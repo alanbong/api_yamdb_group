@@ -58,12 +58,16 @@ class CommentsPermission(BasePermission):
 class UserMePermissions(AllowAny):
 
     def has_permission(self, request, view):
-
-        if request.method in SAFE_METHODS:
-            return True
-
+        # Разрешаем доступ всем аутентифицированным пользователям для POST и PATCH
         if request.method in ['POST', 'PATCH']:
-            return request.user.role in ['user', 'moderator', 'admin']
+            # Проверяем, что пользователь аутентифицирован и у него есть роль
+            if request.user.is_authenticated:
+                # Разрешаем доступ только пользователям с ролями 'user', 'moderator' или 'admin'
+                return request.user.role in ['user', 'moderator', 'admin']
+            return False
 
-        if request.method == 'DELETE':
-            return request.user.role in ['moderator', 'admin']
+        # Для остальных методов проверяем, что пользователь аутентифицирован и его роль 'user'
+        if request.user.is_authenticated:
+            return request.user.role == 'user'
+
+        return False
