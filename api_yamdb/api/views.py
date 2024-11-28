@@ -19,7 +19,7 @@ from reviews.models import Category, Title, Genre, Comment, Review, CustomUser
 from .serializers import (CategorySerializer, TitleSerializer,
                           GenreSerializer, ReviewSerializer, CommentSerializer,
                           SignupSerializer, TokenSerializer, CustomUserSerializer)
-from .permissions import IsAdmin, CommentsPermission, IsAdminOrReadOnly
+from .permissions import IsAdmin, CommentsPermission, IsAdminOrReadOnly, UserMePermissions
 from rest_framework import permissions
 from rest_framework.filters import SearchFilter
 
@@ -38,13 +38,14 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
 
-class UserMeViewSet(UpdateModelMixin, GenericViewSet):
+class UserMeViewSet(viewsets.ModelViewSet):
     """
     Эндпоинт для изменения профиля.
     """
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes = [CommentsPermission]
+    permission_classes = [UserMePermissions]
+    http_method_names = ['get', 'patch']
 
     def get_object(self):
         return self.request.user

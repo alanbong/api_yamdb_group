@@ -1,4 +1,5 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission, SAFE_METHODS, AllowAny
+
 
 
 
@@ -51,4 +52,22 @@ class CommentsPermission(BasePermission):
             comment = view.get_object()  # Получаем объект комментария
             if (request.user == comment.author or request.user.is_moderator or request.user.is_admin):
                 return True
+        return False
+
+
+class UserMePermissions(AllowAny):
+
+    def has_permission(self, request, view):
+        # Разрешаем доступ всем аутентифицированным пользователям для POST и PATCH
+        if request.method in ['POST', 'PATCH']:
+            # Проверяем, что пользователь аутентифицирован и у него есть роль
+            if request.user.is_authenticated:
+                # Разрешаем доступ только пользователям с ролями 'user', 'moderator' или 'admin'
+                return request.user.role in ['user', 'moderator', 'admin']
+            return False
+
+        # Для остальных методов проверяем, что пользователь аутентифицирован и его роль 'user'
+        if request.user.is_authenticated:
+            return request.user.role == 'user'
+
         return False
