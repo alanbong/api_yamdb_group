@@ -1,9 +1,14 @@
+import re
+
+from django.core.validators import RegexValidator
 from rest_framework import serializers
+from django.db.models import Q
 from django.contrib.auth import get_user_model
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from datetime import datetime
 
 from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre, CustomUser
+
 
 User = get_user_model()
 
@@ -17,19 +22,59 @@ class CustomUserSerializer(serializers.ModelSerializer):
         read_only_fields = ('role',)
 
 
-class SignupSerializer(serializers.ModelSerializer):
-    """Сериализатор для регистрации пользователя."""
-    class Meta:
-        model = User
-        fields = ('username', 'email')  # Указываем нужные поля из модели
+class SignupSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254, required=True)
+    username = serializers.CharField(
+        max_length=150,
+        required=True,
+        validators=[
+                RegexValidator(
+                regex=r'^[\w.@+-]+\Z',
+                message='Username может содержать только буквы, цифры и символы @/./+/-/_'
+            )
+        ]
+    )
 
     def validate_username(self, value):
-        """Дополнительная валидация поля username."""
-        if value.lower() == 'me':
+        """
+        Проверяем, что username не является зарезервированным.
+        """
+        if value == "me":
             raise serializers.ValidationError(
-                "Имя пользователя 'me' использовать запрещено."
+                "Имя пользователя 'me' использовать нельзя."
             )
         return value
+
+    def validate(self, data):
+        """
+        Проверяем пользователя в базе данных.
+        Если пользователь с совпадающим username и email существует,
+        пропускаем проверку уникальности.
+        """
+        username = data.get('username')
+        email = data.get('email')
+
+        # Поиск пользователя в базе
+        user = User.objects.filter(Q(username=username) | Q(email=email)).first()
+
+        if user:
+            # Конфликт: email совпадает, но username другой
+            if user.username != username and user.email == email:
+                raise serializers.ValidationError(
+                    {"email": "Этот email уже используется с другим username."}
+                )
+
+            # Конфликт: username совпадает, но email другой
+            if user.email != email and user.username == username:
+                raise serializers.ValidationError(
+                    {"username": "Этот username уже используется с другим email."}
+                )
+
+            # Если пользователь существует, возвращаем данные
+            if user.username == username and user.email == email:
+                return data
+
+        return data
 
 
 class TokenSerializer(serializers.Serializer):

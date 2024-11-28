@@ -1,10 +1,16 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
-class IsAdminOrReadOnly(BasePermission):
-    """
-    Доступ для чтения всем, а для записи только администраторам.
-    """
+
+class IsAdmin(BasePermission):
+    """Доступ только для администратора."""
+
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_admin
+
+
+class IsModeratorOrReadOnly(BasePermission):
+    """Доступ для модераторов или только чтение."""
 
     def has_permission(self, request, view):
         # Разрешаем доступ для всех пользователей для безопасных методов

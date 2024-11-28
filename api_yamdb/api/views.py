@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.generics import get_object_or_404
+from rest_framework.decorators import action
 
 from reviews.models import Category, Title, Genre, Comment, Review, CustomUser
 from .serializers import (CategorySerializer, TitleSerializer,
@@ -18,6 +19,7 @@ from .serializers import (CategorySerializer, TitleSerializer,
                           SignupSerializer, TokenSerializer, CustomUserSerializer)
 from .permissions import IsAdminOrReadOnly, CommentsPermission
 from rest_framework import permissions
+from rest_framework.filters import SearchFilter
 
 
 User = get_user_model()
@@ -27,7 +29,9 @@ class CustomUserViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
     queryset = CustomUser.objects.all().order_by('username')
     serializer_class = CustomUserSerializer
-    permission_classes = IsAdminOrReadOnly,
+    permission_classes = [IsAdmin]
+    filter_backends = [SearchFilter]
+    search_fields = ['username', 'email']
     lookup_field = 'username'
 
     def get_permissions(self):
@@ -44,7 +48,7 @@ class CategoryViewSet(mixins.ListModelMixin,
 
     queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
-    permission_classes = IsAdminOrReadOnly,
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -54,9 +58,10 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.all().order_by('name')
     serializer_class = TitleSerializer
-    permission_classes = IsAdminOrReadOnly,
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('category', 'genre', 'name', 'year')
+    lookup_field = 'name'
 
 
 class GenreViewSet(mixins.ListModelMixin,
@@ -67,11 +72,10 @@ class GenreViewSet(mixins.ListModelMixin,
 
     queryset = Genre.objects.all().order_by('name')
     serializer_class = GenreSerializer
-    permission_classes = IsAdminOrReadOnly,
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Класс отзывов."""
@@ -99,7 +103,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = CommentsPermission,
     serializer_class = CommentSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('title__id','reviews__id')
+    search_fields = ('title__id', 'reviews__id')
 
     def get_review(self):
         """Возвращает объект Review по 'review_id'."""
@@ -114,21 +118,19 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class SignupView(APIView):
     """Регистрация пользователя и отправка confirmation_code."""
-    permission_classes = []
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         username = serializer.validated_data['username']
         email = serializer.validated_data['email']
 
-        # Создание или получение пользователя
-        user, created = CustomUser.objects.get_or_create(username=username, email=email)
+        user, _ = User.objects.get_or_create(username=username, email=email)
 
-        # Генерация confirmation code
         confirmation_code = default_token_generator.make_token(user)
 
-        # Отправка email с confirmation code
         try:
             send_mail(
                 subject="Код подтверждения для YaMDB",
@@ -136,13 +138,12 @@ class SignupView(APIView):
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
             )
-        except Exception:
+        except Exception as e:
             return Response(
-                {"detail": "Ошибка при отправке email. Попробуйте позже."},
+                {"detail": f"Ошибка при отправке email: {str(e)}. Попробуйте позже."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # Возврат данных о созданном пользователе
         return Response(
             {"username": username, "email": email},
             status=status.HTTP_200_OK
