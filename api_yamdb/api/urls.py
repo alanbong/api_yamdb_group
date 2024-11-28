@@ -9,7 +9,8 @@ from .views import (
     ReviewViewSet,
     SignupView,
     TokenView,
-    CustomUserViewSet
+    CustomUserViewSet,
+    UserMeViewSet
 )
 
 v1_router = DefaultRouter()
@@ -17,6 +18,7 @@ v1_router.register(r'categories', CategoryViewSet, basename='category')
 v1_router.register('genres', GenreViewSet, basename='genre')
 v1_router.register('titles', TitleViewSet, basename='title')
 v1_router.register('users', CustomUserViewSet, basename='users')
+v1_router.register('users/me', UserMeViewSet, basename='users-me')
 
 v1_router.register(r'titles/(?P<title_id>\d+)/reviews',
                    ReviewViewSet, basename='title-reviews')
