@@ -1,8 +1,6 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS, AllowAny
 
 
-
-
 class IsAdmin(BasePermission):
     """Доступ только для администратора."""
 
@@ -38,20 +36,27 @@ class CommentsPermission(BasePermission):
         if request.method in SAFE_METHODS:
             return True
 
-        # Проверяем авторизацию для остальных методов
-        return request.user.is_authenticated
+        # Для методов записи/обновления/удаления проверяем аутентификацию
+        if not request.user.is_authenticated:
+            return False
 
-    def has_object_permission(self, request, view, obj):
-        # Чтение доступно всем
-        if request.method in SAFE_METHODS:
-            return True
+        # Дополнительная проверка объекта для методов, требующих его
+        if request.method in ('PATCH', 'DELETE'):
+            # Получаем объект через `get_object` во ViewSet
+            obj = view.get_object()
 
-        # Редактировать может автор, модератор или администратор
-        return (
-            request.user == obj.author
-            or request.user.is_moderator
-            or request.user.is_admin
-        )
+            # Проверяем, является ли пользователь автором, модератором или администратором
+            if obj.author == request.user:
+                return True
+            if getattr(request.user, 'is_moderator', False):
+                return True
+            if getattr(request.user, 'is_admin', False):
+                return True
+
+            # Если пользователь не имеет прав, возвращаем False
+            return False
+
+        return True
 
 
 class UserMePermissions(AllowAny):

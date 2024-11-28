@@ -3,13 +3,11 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import UniqueConstraint
 from django.core.exceptions import ValidationError
-
-
-RATING_CHOICES = [(i, i) for i in range(1, 11)]
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.exceptions import ValidationError
 
+RATING_CHOICES = [(i, i) for i in range(1, 11)]
 ROLE_CHOICES = [
     ('user', 'User'),
     ('moderator', 'Moderator'),

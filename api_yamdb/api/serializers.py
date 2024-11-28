@@ -187,6 +187,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only=True, slug_field='username'
     )
 
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+
     def validate(self, data):
         request = self.context['request']
         title = self.context['view'].get_title()
@@ -195,15 +199,3 @@ class ReviewSerializer(serializers.ModelSerializer):
         ).exists():
             raise ValidationError('Вы уже оставили отзыв на это произведение.')
         return data
-    
-    class Meta:
-        model = Review
-        fields = ('id', 'text', 'author', 'score', 'pub_date')
-
-        # validators = [
-        #     UniqueTogetherValidator(
-        #         queryset=Review.objects.all(),
-        #         fields=('author', 'title'),
-        #         message='Вы уже оставили отзыв на это произведение!'
-        #     )
-        # ]

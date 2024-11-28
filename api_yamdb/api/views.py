@@ -14,6 +14,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import UpdateModelMixin
+from rest_framework.exceptions import PermissionDenied
 
 from reviews.models import Category, Title, Genre, Comment, Review, CustomUser
 from .serializers import (CategorySerializer, TitleSerializer,
@@ -134,12 +135,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     lookup_url_kwarg = 'review_id'
 
-    def update(self, request, *args, **kwargs):
-        """
-        Отключить PUT-запросы.
-        """
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
     def get_object(self):
         """
         Переопределяет стандартный метод для поиска объекта.
@@ -170,6 +165,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, title=title)
 
 
+
 class CommentViewSet(viewsets.ModelViewSet):
     """Класс комментов."""
 
@@ -182,7 +178,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_review(self):
         """Возвращает объект Review по 'review_id'."""
         return get_object_or_404(Review, id=self.kwargs['review_id'])
-    
+
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
 
