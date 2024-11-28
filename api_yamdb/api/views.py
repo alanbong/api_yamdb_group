@@ -130,20 +130,44 @@ class ReviewViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title__id',)
     http_method_names = ('get', 'post', 'patch', 'delete')
+    queryset = Review.objects.all()
+    lookup_field = 'id'
+    lookup_url_kwarg = 'review_id'
 
-    def get_title(self):
-        """Возвращает объект Title по 'title_id'."""
-        return get_object_or_404(Title, pk=self.kwargs['title_id'])
+    def update(self, request, *args, **kwargs):
+        """
+        Отключить PUT-запросы.
+        """
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def get_object(self):
+        """
+        Переопределяет стандартный метод для поиска объекта.
+        """
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get(self.lookup_url_kwarg)
+        return get_object_or_404(Review, id=review_id, title_id=title_id)
 
     def get_queryset(self):
-        return self.get_title().reviews.all()
+        """
+        Возвращает отзывы для указанного произведения.
+        """
+        title_id = self.kwargs.get('title_id')
+        return self.queryset.filter(title_id=title_id)
+
+    def get_title(self):
+        """
+        Возвращает объект произведения по его id из URL.
+        """
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(Title, id=title_id)
 
     def perform_create(self, serializer):
-        """Переопределяем создание отзывов."""
-        serializer.save(
-            author=self.request.user,
-            title=self.get_title()
-        )
+        """
+        Устанавливает автора и произведение при создании отзыва.
+        """
+        title = self.get_title()
+        serializer.save(author=self.request.user, title=title)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

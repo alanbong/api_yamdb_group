@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.contrib.auth import get_user_model
 from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from datetime import datetime
+from rest_framework.exceptions import ValidationError
 
 from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre, CustomUser
 
@@ -180,13 +181,21 @@ class TitleSerializer(serializers.ModelSerializer):
         return representation
 
 
-
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов."""
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
 
+    def validate(self, data):
+        request = self.context['request']
+        title = self.context['view'].get_title()
+        if request.method == 'POST' and Review.objects.filter(
+            author=request.user, title=title
+        ).exists():
+            raise ValidationError('Вы уже оставили отзыв на это произведение.')
+        return data
+    
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')

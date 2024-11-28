@@ -31,28 +31,27 @@ class IsAdminOrReadOnly(BasePermission):
 
 class CommentsPermission(BasePermission):
     """
-    Доступ для чтения всем, а для редактирования стафу и автору
+    Доступ для чтения всем, а для редактирования автору, модератору или администратору.
     """
-
     def has_permission(self, request, view):
-        # Просмотр комментариев и отдельных комментариев доступен всем
+        # Чтение доступно всем
         if request.method in SAFE_METHODS:
             return True
 
-        # Если пользователь анонимный, не проверяем его роль
-        if not request.user.is_authenticated:
-            return False
+        # Проверяем авторизацию для остальных методов
+        return request.user.is_authenticated
 
-        # Создание комментария доступно всем, кроме анонимных пользователей
-        if request.method == 'POST' and request.user.is_authenticated:
+    def has_object_permission(self, request, view, obj):
+        # Чтение доступно всем
+        if request.method in SAFE_METHODS:
             return True
 
-        # Проверка является ли пользователь автором, модератором или админом
-        if request.method in ['PUT', 'PATCH', 'DELETE']:
-            comment = view.get_object()  # Получаем объект комментария
-            if (request.user == comment.author or request.user.is_moderator or request.user.is_admin):
-                return True
-        return False
+        # Редактировать может автор, модератор или администратор
+        return (
+            request.user == obj.author
+            or request.user.is_moderator
+            or request.user.is_admin
+        )
 
 
 class UserMePermissions(AllowAny):
