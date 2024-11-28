@@ -63,6 +63,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+        ordering = ['name']
 
     def __str__(self):
         return self.name[:50]
@@ -76,6 +77,7 @@ class Genre(models.Model):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
+        ordering = ['name']
 
     def __str__(self):
         return self.name[:50]
@@ -107,6 +109,7 @@ class Title(models.Model):
                 fields=['name', 'category'],
                 name='unique_title_category')
         ]
+        ordering = ['id']
 
     def __str__(self):
         return self.name
@@ -136,6 +139,7 @@ class TitleGenre(models.Model):
         ]
         verbose_name = 'Связь произведение-жанр'
         verbose_name_plural = 'Связи произведение-жанр'
+        ordering = ['id']
 
     def __str__(self):
         return f'{self.title} - {self.genre}'
@@ -162,6 +166,7 @@ class Review(models.Model):
         ]
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        ordering = ['-pub_date']
 
     def clean(self):
         if Review.objects.filter(
@@ -190,6 +195,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        ordering = ['-pub_date']
 
     def __str__(self):
         return f'Комментарий от {self.author} на {self.review}'

@@ -114,6 +114,9 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    # review = serializers.PrimaryKeyRelatedField(
+    #     queryset=Review.objects.all()
+    # )
 
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
@@ -130,11 +133,8 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для произведений."""
-    genre = serializers.SlugRelatedField(slug_field='slug',
-                                         queryset=Genre.objects.all(),
-                                         many=True)
-    category = serializers.SlugRelatedField(slug_field='slug',
-                                            queryset=Category.objects.all())
+    genre = serializers.SlugRelatedField(slug_field='slug', queryset=Genre.objects.all(), many=True, required=True)
+    category = serializers.SlugRelatedField(slug_field='slug', queryset=Category.objects.all(), required=True)
     rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -144,18 +144,15 @@ class TitleSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=Title.objects.all(),
                 fields=('name', 'category'),
-                message='Такое произведение уже '
-                        'присутствует в указанной категории!'
+                message='Такое произведение уже присутствует в указанной категории!'
             )
         ]
-    
+
     def validate_year(self, value):
         """Проверка, что год выпуска не больше текущего."""
         current_year = datetime.now().year
         if value > current_year:
-            raise serializers.ValidationError(
-                'Год выпуска не может быть больше текущего!'
-            )
+            raise serializers.ValidationError('Год выпуска не может быть больше текущего!')
         return value
 
     def get_rating(self, obj):
@@ -166,36 +163,22 @@ class TitleSerializer(serializers.ModelSerializer):
         all_score = sum(review.score for review in reviews)
         return round(all_score / num_score, 0)
 
-    def create(self, validated_data):
-        genres = validated_data.pop('genre')
-        # Извлекаем поле 'category', так как оно передается как объект, а не как слаг
-        category = validated_data.pop('category')
+    def to_representation(self, instance):
+        """Переопределяем метод to_representation для корректного представления жанров и категорий."""
+        # Получаем стандартное представление данных
+        representation = super().to_representation(instance)
 
-        # Создаем объект Title
-        title = Title.objects.create(**validated_data, category=category)
+        # Преобразуем жанры в нужный формат (список словарей)
+        representation['genre'] = [{"name": genre.name, "slug": genre.slug} for genre in instance.genre.all()]
+        
+        # Преобразуем категорию в нужный формат (словарь)
+        representation['category'] = {
+            "name": instance.category.name,
+            "slug": instance.category.slug
+        }
 
-        # Связываем жанры с произведением
-        for genre in genres:
-            TitleGenre.objects.create(
-                genre=genre, title=title
-            )
+        return representation
 
-        return title
-
-    
-    def update(self, instance, validated_data):
-        genres = validated_data.pop('genre', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)      
-        instance.save()
-
-        if genres is not None:
-            instance.genres.clear()
-            for genre in genres:
-                current_genre = Genre.objects.get(genre)
-                TitleGenre.objects.create(genre=current_genre, title=instance)
-
-        return instance
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -203,14 +186,15 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    
+
     class Meta:
         model = Review
-        fields = ('text', 'author', 'score', 'pub_date')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=('author', 'title'),
-                message='Вы уже оставили отзыв на это произведение!'
-            )
-        ]
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+
+        # validators = [
+        #     UniqueTogetherValidator(
+        #         queryset=Review.objects.all(),
+        #         fields=('author', 'title'),
+        #         message='Вы уже оставили отзыв на это произведение!'
+        #     )
+        # ]

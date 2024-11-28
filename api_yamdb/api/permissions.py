@@ -6,7 +6,7 @@ class IsAdmin(BasePermission):
     """Доступ только для администратора."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_admin
+        return request.user.is_authenticated and (request.user.role == 'admin' or request.user.is_superuser)
 
 
 class IsAdminOrReadOnly(BasePermission):
@@ -43,13 +43,12 @@ class CommentsPermission(BasePermission):
             return False
 
         # Создание комментария доступно всем, кроме анонимных пользователей
-        if request.method == 'POST':
-            return request.user.is_authenticated
+        if request.method == 'POST' and request.user.is_authenticated:
+            return True
 
         # Проверка является ли пользователь автором, модератором или админом
         if request.method in ['PUT', 'PATCH', 'DELETE']:
             comment = view.get_object()  # Получаем объект комментария
-            if (request.user == comment.author or request.user.is_staff
-                    or request.user.is_superuser):
+            if (request.user == comment.author or request.user.is_moderator or request.user.is_admin):
                 return True
         return False
