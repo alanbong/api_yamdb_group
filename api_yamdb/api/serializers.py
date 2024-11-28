@@ -17,9 +17,20 @@ class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор для CustomUser."""
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = ('username', 'email', 'role', 'bio', 'first_name', 'last_name')
-        read_only_fields = ('role',)
+        # read_only_fields = ('role',)
+
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise serializers.ValidationError('Использовать имя "me" запрещено.')
+        if len(value) > 150:
+            raise serializers.ValidationError('Имя не должно быть длиннее 150 символов.')
+        if not re.match(r'^[\w.@+-]+\Z', value):
+            raise serializers.ValidationError(
+                'Username может содержать только буквы, цифры и символы @/./+/-/_'
+            )
+        return value
 
 
 class SignupSerializer(serializers.Serializer):
