@@ -12,6 +12,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import action
+from rest_framework.viewsets import GenericViewSet
+from rest_framework.mixins import UpdateModelMixin
 
 from reviews.models import Category, Title, Genre, Comment, Review, CustomUser
 from .serializers import (CategorySerializer, TitleSerializer,
