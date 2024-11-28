@@ -1,6 +1,7 @@
 """Настройки администратора"""
 from django.contrib import admin
-from .models import CustomUser, Category, Genre, Title, ROLE_CHOICES
+
+from .models import CustomUser, Category, Genre, Title
 
 
 @admin.register(CustomUser)
@@ -13,15 +14,15 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')  # поля для отображения
-    prepopulated_fields = {'slug': ('name',)}  # автоматическое создания слага
+    list_display = ('name', 'slug')
+    prepopulated_fields = {'slug': ('name',)}
     list_filter = ('name',)
 
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')  # поля для отображения
-    prepopulated_fields = {'slug': ('name',)}  # автоматическое создания слага
+    list_display = ('name', 'slug')
+    prepopulated_fields = {'slug': ('name',)}
     list_filter = ('name',)
 
 
@@ -29,8 +30,8 @@ class GenreAdmin(admin.ModelAdmin):
 class TitleAdmin(admin.ModelAdmin):
     list_display = (
         'name', 'year', 'description', 'display_genres', 'category'
-    ) # поля для отображения
-    list_filter = ('name', 'year', 'genre', 'category')  # Фильтрация
+    )
+    list_filter = ('name', 'year', 'genre', 'category')
     search_fields = ('name',)
 
     def display_genres(self, obj):

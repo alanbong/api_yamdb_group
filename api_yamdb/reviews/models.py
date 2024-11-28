@@ -1,11 +1,8 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import UniqueConstraint
-from django.core.exceptions import ValidationError
-from django.contrib.auth.models import AbstractUser
-from django.db import models
-from django.core.exceptions import ValidationError
 
 RATING_CHOICES = [(i, i) for i in range(1, 11)]
 ROLE_CHOICES = [
@@ -35,7 +32,8 @@ class CustomUser(AbstractUser):
 
     def validate_username(self):
         if self.username.lower() == 'me':
-            raise ValidationError("Нельзя использовать 'me' в качестве имени пользователя.")
+            raise ValidationError(
+                "Нельзя использовать 'me' в качестве имени пользователя.")
 
     @property
     def is_admin(self):
@@ -151,7 +149,10 @@ class Review(models.Model):
     text = models.CharField(max_length=256, verbose_name='Название')
     score = models.IntegerField(choices=RATING_CHOICES)
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Автор')
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name='Автор')
+
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата создания'
     )
@@ -186,7 +187,10 @@ class Comment(models.Model):
                                on_delete=models.CASCADE,
                                verbose_name='Отзыв')
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Автор')
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name='Автор')
+
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата создания'
     )
