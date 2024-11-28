@@ -1,10 +1,13 @@
 from rest_framework import serializers
+from django.db.models import Q
 from django.contrib.auth import get_user_model
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 from datetime import datetime
 
 from reviews.models import Category, Comment, Genre, Review, Title, TitleGenre, CustomUser
 
+
+User = get_user_model()
 
 class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор для CustomUser."""
@@ -15,39 +18,50 @@ class CustomUserSerializer(serializers.ModelSerializer):
         read_only_fields = ('role',)
 
 
-class SignupSerializer(serializers.ModelSerializer):
-    """Сериализатор для регистрации пользователя."""
-    class Meta:
-        model = CustomUser
-        fields = ('username', 'email')
+class SignupSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    username = serializers.CharField(max_length=150, required=True)
 
-    def is_valid(self, raise_exception=False):
+    def validate_username(self, value):
         """
-        Переопределяем метод is_valid для проверки существующего пользователя.
+        Проверяем, что username не является зарезервированным.
         """
-        # Получаем данные из контекста
-        data = self.initial_data
+        if value == "me":
+            raise serializers.ValidationError(
+                "Имя пользователя 'me' использовать нельзя."
+            )
+        return value
+
+    def validate(self, data):
+        """
+        Проверяем пользователя в базе данных.
+        Если пользователь с совпадающим username и email существует,
+        пропускаем проверку уникальности.
+        """
         username = data.get('username')
         email = data.get('email')
 
-        # Проверяем, существует ли пользователь с таким username и email
-        user = CustomUser.objects.filter(username=username).first()
+        # Поиск пользователя в базе
+        user = User.objects.filter(Q(username=username) | Q(email=email)).first()
+
         if user:
-            if user.email != email:
+            # Конфликт: email совпадает, но username другой
+            if user.username != username and user.email == email:
                 raise serializers.ValidationError(
-                    {
-                        'username': 'Пользователь с таким username уже существует, но email не совпадает.',
-                        'email': 'Пользователь с таким email уже существует, но username не совпадает.'
-                    }
+                    {"email": "Этот email уже используется с другим username."}
                 )
-            # Если пользователь существует и email совпадает, добавляем сообщение в контекст
-            self._validated_data = {'username': username, 'email': email}
-            self.context['user_exists'] = True
-            return True
 
-        # Если пользователь не найден, вызываем стандартную проверку
-        return super().is_valid(raise_exception=raise_exception)
+            # Конфликт: username совпадает, но email другой
+            if user.email != email and user.username == username:
+                raise serializers.ValidationError(
+                    {"username": "Этот username уже используется с другим email."}
+                )
 
+            # Если пользователь существует, возвращаем данные
+            if user.username == username and user.email == email:
+                return data
+
+        return data
 
 
 class TokenSerializer(serializers.Serializer):
