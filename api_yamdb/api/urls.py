@@ -13,7 +13,7 @@ from .views import (
 )
 
 v1_router = DefaultRouter()
-v1_router.register(r'categories', CategoryViewSet, basename='category')
+v1_router.register('categories', CategoryViewSet, basename='category')
 v1_router.register('genres', GenreViewSet, basename='genre')
 v1_router.register('titles', TitleViewSet, basename='title')
 v1_router.register('users', CustomUserViewSet, basename='users')
@@ -27,7 +27,6 @@ v1_router.register(
 
 urlpatterns = [
     path('', include(v1_router.urls)),
-    path('categories/<slug:slug>/', CategoryViewSet.as_view({'delete': 'destroy'})),
     path('auth/signup/', SignupView.as_view(), name='signup'),
     path('auth/token/', TokenView.as_view(), name='token'),
 ]

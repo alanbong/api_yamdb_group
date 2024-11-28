@@ -27,7 +27,7 @@ User = get_user_model()
 
 class CustomUserViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
-    queryset = CustomUser.objects.all().order_by('username')
+    queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = [IsAdmin]
     filter_backends = [SearchFilter]
@@ -46,7 +46,7 @@ class CategoryViewSet(mixins.ListModelMixin,
                       viewsets.GenericViewSet):
     """Класс категорий."""
 
-    queryset = Category.objects.all().order_by('name')
+    queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
@@ -54,19 +54,16 @@ class CategoryViewSet(mixins.ListModelMixin,
     lookup_field = 'slug'
 
 
-class TitleViewSet(mixins.ListModelMixin,
-                   mixins.CreateModelMixin,
-                   mixins.DestroyModelMixin,
-                   mixins.UpdateModelMixin,
-                   viewsets.GenericViewSet,):
+class TitleViewSet(viewsets.ModelViewSet):
     """Класс произведений."""
 
-    queryset = Title.objects.all().order_by('name')
+    queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('category', 'genre', 'name', 'year')
-    lookup_field = 'name'
+    lookup_field = 'id'
+    http_method_names = ('get', 'post', 'patch', 'delete')
 
 
 class GenreViewSet(mixins.ListModelMixin,
@@ -75,20 +72,22 @@ class GenreViewSet(mixins.ListModelMixin,
                    viewsets.GenericViewSet):
     """Класс жанров."""
 
-    queryset = Genre.objects.all().order_by('name')
+    queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
 
+
 class ReviewViewSet(viewsets.ModelViewSet):
     """Класс отзывов."""
 
-    permission_classes = CommentsPermission,
+    permission_classes = (CommentsPermission,)
     serializer_class = ReviewSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title__id',)
+    http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_title(self):
         """Возвращает объект Title по 'title_id'."""
@@ -99,26 +98,33 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Переопределяем создание отзывов."""
-        serializer.save(user=self.request.user)
+        serializer.save(
+            author=self.request.user,
+            title=self.get_title()
+        )
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Класс комментов."""
 
-    permission_classes = CommentsPermission,
+    permission_classes = (CommentsPermission,)
     serializer_class = CommentSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title__id', 'reviews__id')
+    http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_review(self):
         """Возвращает объект Review по 'review_id'."""
-        return get_object_or_404(Review, pk=self.kwargs['review_id'])
+        return get_object_or_404(Review, id=self.kwargs['review_id'])
+    
+    def get_title(self):
+        return get_object_or_404(Title, id=self.kwargs['title_id'])
 
     def get_queryset(self):
-        return self.get_review().comment.all()
+        return self.get_review().comments.all()
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user, review=self.get_review())
+        serializer.save(author=self.request.user, review=self.get_review(), title=self.get_title())
 
 
 class SignupView(APIView):

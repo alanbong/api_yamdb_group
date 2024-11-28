@@ -103,6 +103,9 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
+    # review = serializers.PrimaryKeyRelatedField(
+    #     queryset=Review.objects.all()
+    # )
 
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
@@ -125,6 +128,7 @@ class TitleSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(slug_field='slug',
                                             queryset=Category.objects.all())
     rating = serializers.SerializerMethodField()
+    # name = serializers.CharField(max_length=256)
 
     class Meta:
         model = Title
@@ -137,7 +141,7 @@ class TitleSerializer(serializers.ModelSerializer):
                         'присутствует в указанной категории!'
             )
         ]
-    
+
     def validate_year(self, value):
         """Проверка, что год выпуска не больше текущего."""
         current_year = datetime.now().year
@@ -171,7 +175,6 @@ class TitleSerializer(serializers.ModelSerializer):
 
         return title
 
-    
     def update(self, instance, validated_data):
         genres = validated_data.pop('genre', None)
         for attr, value in validated_data.items():
@@ -192,14 +195,15 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    
+
     class Meta:
         model = Review
-        fields = ('text', 'author', 'score', 'pub_date')
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=('author', 'title'),
-                message='Вы уже оставили отзыв на это произведение!'
-            )
-        ]
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+
+        # validators = [
+        #     UniqueTogetherValidator(
+        #         queryset=Review.objects.all(),
+        #         fields=('author', 'title'),
+        #         message='Вы уже оставили отзыв на это произведение!'
+        #     )
+        # ]
