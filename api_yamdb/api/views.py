@@ -60,10 +60,37 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (filters.OrderingFilter, filters.SearchFilter,)
     search_fields = ('category', 'genre', 'name', 'year')
     lookup_field = 'id'
     http_method_names = ('get', 'post', 'patch', 'delete')
+
+    def get_queryset(self):
+        """
+        Отфильтровать произведения по году, жанру и категории, если указаны в запросе.
+        """
+        queryset = Title.objects.all()
+
+        # Фильтрация по году (если параметр 'year' передан)
+        year = self.request.query_params.get('year', None)
+        if year:
+            queryset = queryset.filter(year=year)
+
+        name = self.request.query_params.get('name', None)
+        if name:
+            queryset = queryset.filter(name=name)
+
+        # Фильтрация по жанрам (по слагам)
+        genre_slug = self.request.query_params.get('genre', None)
+        if genre_slug:
+            queryset = queryset.filter(genre__slug=genre_slug)
+
+        # Фильтрация по категориям (по слагам)
+        category_slug = self.request.query_params.get('category', None)
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+
+        return queryset
 
 
 class GenreViewSet(mixins.ListModelMixin,
