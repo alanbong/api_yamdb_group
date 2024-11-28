@@ -17,7 +17,7 @@ from reviews.models import Category, Title, Genre, Comment, Review, CustomUser
 from .serializers import (CategorySerializer, TitleSerializer,
                           GenreSerializer, ReviewSerializer, CommentSerializer,
                           SignupSerializer, TokenSerializer, CustomUserSerializer)
-from .permissions import IsAdminOrReadOnly, CommentsPermission
+from .permissions import IsAdmin, CommentsPermission
 from rest_framework import permissions
 from rest_framework.filters import SearchFilter
 
@@ -48,7 +48,7 @@ class CategoryViewSet(mixins.ListModelMixin,
 
     queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
