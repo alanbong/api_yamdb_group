@@ -20,7 +20,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'role', 'bio', 'first_name', 'last_name')
-        # read_only_fields = ('role',)
 
     def validate_username(self, value):
         if value.lower() == 'me':
@@ -66,23 +65,19 @@ class SignupSerializer(serializers.Serializer):
         username = data.get('username')
         email = data.get('email')
 
-        # Поиск пользователя в базе
         user = User.objects.filter(Q(username=username) | Q(email=email)).first()
 
         if user:
-            # Конфликт: email совпадает, но username другой
             if user.username != username and user.email == email:
                 raise serializers.ValidationError(
                     {"email": "Этот email уже используется с другим username."}
                 )
 
-            # Конфликт: username совпадает, но email другой
             if user.email != email and user.username == username:
                 raise serializers.ValidationError(
                     {"username": "Этот username уже используется с другим email."}
                 )
 
-            # Если пользователь существует, возвращаем данные
             if user.username == username and user.email == email:
                 return data
 
@@ -115,9 +110,6 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
-    # review = serializers.PrimaryKeyRelatedField(
-    #     queryset=Review.objects.all()
-    # )
 
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
