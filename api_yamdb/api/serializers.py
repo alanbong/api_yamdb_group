@@ -91,7 +91,7 @@ class TitleSerializer(serializers.ModelSerializer):
                 message='Такое произведение уже '
                         'присутствует в указанной категории!'
             )
-        ] 
+        ]
     
     def validate_year(self, value):
         """Проверка, что год выпуска не больше текущего."""
@@ -112,25 +112,20 @@ class TitleSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         genres = validated_data.pop('genre')
-        category_slug = validated_data.pop('category_slug', None)  # Извлекаем слаг категории, если он есть
-        title = Title.objects.create(**validated_data)  # Создаем объект Title
+        # Извлекаем поле 'category', так как оно передается как объект, а не как слаг
+        category = validated_data.pop('category')
 
-        # Если слаг категории передан, находим категорию по слагу и сохраняем его в title
-        if category_slug:
-            category = Category.objects.get(slug=category_slug)
-            title.category = category
-            title.save()
+        # Создаем объект Title
+        title = Title.objects.create(**validated_data, category=category)
 
-        # Итерируем по объектам жанра
+        # Связываем жанры с произведением
         for genre in genres:
-            # genre здесь уже объект Genre, а не словарь
-            genre_slug = genre.slug  # Просто получаем слаг жанра
-            current_genre = Genre.objects.get(
-                slug=genre_slug)  # Ищем жанр по слагу
             TitleGenre.objects.create(
-                genre=current_genre, title=title)  # Связываем жанр с title
+                genre=genre, title=title
+            )
 
         return title
+
     
     def update(self, instance, validated_data):
         genres = validated_data.pop('genre', None)
