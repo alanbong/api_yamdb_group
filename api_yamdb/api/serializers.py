@@ -11,7 +11,10 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import Category, Comment, Genre, Review, Title
+from reviews.models import (
+    Category, Comment, Genre,
+    Review, Title, validate_username
+)
 
 
 User = get_user_model()
@@ -25,44 +28,14 @@ class UserModelSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'role', 'bio', 'first_name', 'last_name')
 
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                'Использовать имя "me" запрещено.')
-        if len(value) > 150:
-            raise serializers.ValidationError(
-                'Имя не должно быть длиннее 150 символов.')
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise serializers.ValidationError(
-                'Username может содержать только буквы,'
-                ' цифры и символы @/./+/-/_'
-            )
-        return value
-
 
 class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254, required=True)
     username = serializers.CharField(
         max_length=150,
         required=True,
-        validators=[
-            RegexValidator(
-                regex=r'^[\w.@+-]+\Z',
-                message='Username может содержать только буквы,'
-                        ' цифры и символы @/./+/-/_'
-            )
-        ]
+        validators=[validate_username],
     )
-
-    def validate_username(self, value):
-        """
-        Проверяем, что username не является зарезервированным.
-        """
-        if value == "me":
-            raise serializers.ValidationError(
-                "Имя пользователя 'me' использовать нельзя."
-            )
-        return value
 
     def validate(self, data):
         """
@@ -72,24 +45,25 @@ class SignupSerializer(serializers.Serializer):
         """
         username = data.get('username')
         email = data.get('email')
+        errors = {}
 
         user = User.objects.filter(
-            Q(username=username) | Q(email=email)).first()
+            Q(username=username) | Q(email=email)
+        ).first()
 
+        #  Пожалуйста, сообщи как это можно сделать элегантней
         if user:
             if user.username != username and user.email == email:
-                raise serializers.ValidationError(
-                    {"email": "Этот email уже используется с другим username."}
-                )
-
+                errors["email"] = [
+                    "Этот email уже используется с другим username."
+                ]
             if user.email != email and user.username == username:
-                raise serializers.ValidationError(
-                    {"username":
-                     "Этот username уже используется с другим email."}
-                )
+                errors["username"] = [
+                    "Этот username уже используется с другим email."
+                ]
 
-            if user.username == username and user.email == email:
-                return data
+        if errors:
+            raise serializers.ValidationError(errors)
 
         return data
 
