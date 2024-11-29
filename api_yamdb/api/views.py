@@ -85,10 +85,10 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.all()
     http_method_names = ('get', 'post', 'patch', 'delete')
-    if http_method_names == 'get':
-        serializer_class = TitleSerializerForRead
-    else:
-        serializer_class = TitleSerializer
+    # if http_method_names == 'get':
+    #     serializer_class = TitleSerializerForRead
+    # else:
+    #     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,
                        filters.OrderingFilter, filters.SearchFilter)
@@ -97,6 +97,12 @@ class TitleViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     ordering_fields = ['name', 'year']
     ordering = ['name']
+
+    def get_serializer_class(self):
+        """Выбор сериализатора в зависимости от метода запроса."""
+        if self.request.method == 'GET':
+            return TitleSerializerForRead
+        return TitleSerializer
 
     def get_queryset(self):
         return self.queryset.annotate(

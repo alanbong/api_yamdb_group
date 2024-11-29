@@ -223,21 +223,6 @@ class TitleSerializer(serializers.ModelSerializer):
                 'Год выпуска не может быть больше текущего!')
         return value
 
-    def to_representation(self, instance):
-        """Переопределяем метод to_representation '
-        'для корректного представления жанров и категорий."""
-        representation = super().to_representation(instance)
-
-        representation['genre'] = [{"name": genre.name, "slug": genre.slug
-                                    } for genre in instance.genre.all()]
-
-        representation['category'] = {
-            "name": instance.category.name,
-            "slug": instance.category.slug
-        }
-
-        return representation
-
 
 class TitleSerializerForRead(serializers.ModelSerializer):
     """Сериализатор для просмотра произведений."""
