@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 from reviews.models import (
-    Category, Genre, Title, TitleGenre, Review, Comment
+    Category, Genre, Title, Review, Comment
 )
 
 User = get_user_model()
@@ -19,7 +19,6 @@ class Command(BaseCommand):
         self.import_users()
         self.import_reviews()
         self.import_comments()
-        self.import_genre_titles()
 
     def import_categories(self):
         file_path = 'static/data/category.csv'
@@ -111,23 +110,3 @@ class Command(BaseCommand):
         Comment.objects.bulk_create(comments, ignore_conflicts=True)
         self.stdout.write(
             self.style.SUCCESS('Импорт комментариев завершён.'))
-
-    def import_genre_titles(self):
-        file_path = 'static/data/genre_title.csv'
-        genre_titles = []
-
-        with open(file_path, 'r', encoding='utf-8') as file:
-            reader = csv.DictReader(file)
-            for row in reader:
-                genre = Genre.objects.get(id=row['genre_id'])
-                title = Title.objects.get(id=row['title_id'])
-
-                # Создаём объект TitleGenre
-                genre_titles.append(TitleGenre(
-                    title=title,
-                    genre=genre
-                ))
-
-        TitleGenre.objects.bulk_create(genre_titles, ignore_conflicts=True)
-        self.stdout.write(
-            self.style.SUCCESS('Импорт связей жанр-произведение завершён.'))
