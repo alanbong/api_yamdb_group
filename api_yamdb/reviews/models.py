@@ -43,6 +43,12 @@ class UserModel(AbstractUser):
         unique=True,
         verbose_name='Email'
     )
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[validate_username],  # Подключаем нашу валидирующую функцию
+        verbose_name='Username'
+    )
 
     @property
     def is_admin(self):
