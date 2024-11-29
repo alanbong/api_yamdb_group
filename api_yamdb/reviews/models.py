@@ -1,10 +1,11 @@
+from enum import Enum
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
-RATING_CHOICES = [(i, i) for i in range(1, 11)]
 ROLE_CHOICES = [
     ('user', 'User'),
     ('moderator', 'Moderator'),
@@ -12,17 +13,23 @@ ROLE_CHOICES = [
 ]
 
 
+class RoleEnum(Enum):
+    ADMIN = 'administrator'
+    USER = 'regular_user'
+    GUEST = 'guest'
+    MODERATOR = 'moderator'
+
+
 class CustomUser(AbstractUser):
     """Кастомная модель пользователя."""
     role = models.CharField(
-        max_length=20,
+        max_length=max(len(role.value) for role in RoleEnum),
         choices=ROLE_CHOICES,
         default='user',
         verbose_name='Роль'
     )
     bio = models.TextField(
         blank=True,
-        null=True,
         verbose_name='Биография'
     )
     email = models.EmailField(
@@ -147,7 +154,9 @@ class Review(models.Model):
                               on_delete=models.CASCADE,
                               verbose_name='Произведение')
     text = models.CharField(max_length=256, verbose_name='Название')
-    score = models.IntegerField(choices=RATING_CHOICES)
+    score = models.IntegerField(validators=[MinValueValidator(1),
+                                            MaxValueValidator(10)])
+
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
