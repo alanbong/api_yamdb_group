@@ -1,4 +1,5 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS, AllowAny
+from rest_framework.permissions import (BasePermission, SAFE_METHODS,
+                                        AllowAny, IsAuthenticatedOrReadOnly)
 
 
 class IsAdmin(BasePermission):
@@ -13,33 +14,30 @@ class IsAdminOrReadOnly(BasePermission):
     """Доступ для модераторов или только чтение."""
 
     def has_permission(self, request, view):
-        if request.method in SAFE_METHODS:
-            return True
-
-        if not request.user.is_authenticated:
-            return False
-
-        if request.user.is_superuser or request.user.is_admin:
-            return True
-
-        return False
+        return (
+            request.method in SAFE_METHODS or
+            (request.user.is_authenticated and
+            (request.user.is_superuser or request.user.is_admin))
+        )
 
 
-class CommentsPermission(BasePermission):
+class CommentsPermission(IsAuthenticatedOrReadOnly):
     """
     Доступ для чтения всем, а для редактирования автору,
     модератору или администратору.
     """
-    def has_permission(self, request, view):
+    def has_object_permission(self, request, view, obj):
+        # Используем базовую проверку для безопасных методов
         if request.method in SAFE_METHODS:
             return True
 
+        # Проверяем, что пользователь аутентифицирован
         if not request.user.is_authenticated:
             return False
 
+        # Для методов PATCH и DELETE проверяем права на объект
         if request.method in ('PATCH', 'DELETE'):
-            obj = view.get_object()
-
+            # Разрешаем редактирование или удаление, если пользователь автор
             if obj.author == request.user:
                 return True
             if getattr(request.user, 'is_moderator', False):
@@ -49,7 +47,8 @@ class CommentsPermission(BasePermission):
 
             return False
 
-        return True
+        # Для всех остальных методов, если не безопасные, доступ не даем
+        return False
 
 
 class UserMePermissions(AllowAny):
