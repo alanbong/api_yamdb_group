@@ -18,7 +18,7 @@ from api.serializers import (
     TitleSerializerForRead
 )
 from api.permissions import (
-    IsAdmin, CommentsPermission, IsAdminOrReadOnly, UserMePermissions
+    IsAdmin, IsStuffOrAuthor, IsAdminOrReadOnly, UserMePermissions
 )
 from api.baseviewset import BaseCategoryGenreViewSet
 from api.filtres import TitleFilter
@@ -114,7 +114,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     """Класс отзывов."""
 
-    permission_classes = (CommentsPermission,)
+    permission_classes = (IsStuffOrAuthor,)
     serializer_class = ReviewSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title__id',)
@@ -146,7 +146,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """Класс комментов."""
 
-    permission_classes = (CommentsPermission,)
+    permission_classes = (IsStuffOrAuthor,)
     serializer_class = CommentSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title__id', 'reviews__id')

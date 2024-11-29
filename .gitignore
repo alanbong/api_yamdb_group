@@ -134,6 +134,7 @@ dmypy.json
 .AppleDouble
 .LSOverride
 
+
 *.sublime-project
 *.sublime-workspace
 
@@ -147,4 +148,4 @@ dmypy.json
 
 # папки со статикой и медиа
 media/
-
+sent_emails/
