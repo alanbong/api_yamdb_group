@@ -14,7 +14,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Title, Genre, Review
 from .serializers import (
     CategorySerializer, TitleSerializer, GenreSerializer, ReviewSerializer,
-    CommentSerializer, SignupSerializer, TokenSerializer, CustomUserSerializer
+    CommentSerializer, SignupSerializer, TokenSerializer, UserModelSerializer
 )
 from .permissions import (
     IsAdmin, CommentsPermission, IsAdminOrReadOnly, UserMePermissions
@@ -24,10 +24,10 @@ from .permissions import (
 User = get_user_model()
 
 
-class CustomUserViewSet(viewsets.ModelViewSet):
+class UserModelViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
+    serializer_class = UserModelSerializer
     permission_classes = [IsAdmin]
     filter_backends = [SearchFilter]
     search_fields = ['username', 'email']
@@ -40,7 +40,7 @@ class UserMeViewSet(viewsets.ModelViewSet):
     Эндпоинт для изменения профиля.
     """
     queryset = User.objects.all()
-    serializer_class = CustomUserSerializer
+    serializer_class = UserModelSerializer
     permission_classes = [UserMePermissions]
     http_method_names = ['get', 'patch']
 

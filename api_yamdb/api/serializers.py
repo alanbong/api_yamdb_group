@@ -14,8 +14,8 @@ from reviews.models import Category, Comment, Genre, Review, Title
 User = get_user_model()
 
 
-class CustomUserSerializer(serializers.ModelSerializer):
-    """Сериализатор для CustomUser."""
+class UserModelSerializer(serializers.ModelSerializer):
+    """Сериализатор для UserModel."""
 
     class Meta:
         model = User

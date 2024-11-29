@@ -1,4 +1,4 @@
-from enum import Enum
+import re
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -6,26 +6,33 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 
+USER_ROLE = 'user'
+MODERATOR_ROLE = 'moderator'
+ADMIN_ROLE = 'admin'
+
 ROLE_CHOICES = [
-    ('user', 'User'),
-    ('moderator', 'Moderator'),
-    ('admin', 'Admin'),
+    (USER_ROLE, 'User'),
+    (MODERATOR_ROLE, 'Moderator'),
+    (ADMIN_ROLE, 'Admin'),
 ]
 
 
-class RoleEnum(Enum):
-    ADMIN = 'administrator'
-    USER = 'regular_user'
-    GUEST = 'guest'
-    MODERATOR = 'moderator'
+def validate_username(username):
+    if username.lower() == 'me':
+        raise ValidationError(
+            "Нельзя использовать 'me' в качестве имени пользователя.")
+
+    if not re.match(r'^[\w]+$', username):
+        raise ValidationError("Имя пользователя может содержать только буквы, "
+                              "цифры и подчеркивания.")
 
 
-class CustomUser(AbstractUser):
+class UserModel(AbstractUser):
     """Кастомная модель пользователя."""
     role = models.CharField(
-        max_length=max(len(role.value) for role in RoleEnum),
+        max_length=max(len(role[0]) for role in ROLE_CHOICES),
         choices=ROLE_CHOICES,
-        default='user',
+        default=USER_ROLE,
         verbose_name='Роль'
     )
     bio = models.TextField(
@@ -36,11 +43,6 @@ class CustomUser(AbstractUser):
         unique=True,
         verbose_name='Email'
     )
-
-    def validate_username(self):
-        if self.username.lower() == 'me':
-            raise ValidationError(
-                "Нельзя использовать 'me' в качестве имени пользователя.")
 
     @property
     def is_admin(self):
