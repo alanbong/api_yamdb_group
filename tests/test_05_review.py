@@ -308,7 +308,6 @@ class Test05ReviewAPI:
                 url_template=self.REVIEW_DETAIL_URL_TEMPLATE, field='score'
             )
         )
-
         moderator_review_url = self.REVIEW_DETAIL_URL_TEMPLATE.format(
             title_id=titles[0]['id'], review_id=reviews[2]['id']
         )

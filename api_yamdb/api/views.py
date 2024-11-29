@@ -129,6 +129,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     lookup_url_kwarg = 'review_id'
 
+
     def get_object(self):
         """
         Переопределяет стандартный метод для поиска объекта.
@@ -150,6 +151,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         """
         title_id = self.kwargs.get('title_id')
         return get_object_or_404(Title, id=title_id)
+
 
     def perform_create(self, serializer):
         """
@@ -184,6 +186,8 @@ class CommentViewSet(viewsets.ModelViewSet):
             title=self.get_title()
         )
 
+    def perform_update(self, serializer):
+        serializer.save(author=self.request.user, review=self.get_review(),)
 
 class SignupView(APIView):
     """Регистрация пользователя и отправка confirmation_code."""
