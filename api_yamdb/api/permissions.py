@@ -14,7 +14,6 @@ class IsAdminOrReadOnly(BasePermission):
     """Доступ для модераторов или только чтение."""
 
     def has_permission(self, request, view):
-        print(123)
         return (
             request.method in SAFE_METHODS or
             (request.user.is_authenticated and
@@ -22,23 +21,11 @@ class IsAdminOrReadOnly(BasePermission):
         )
 
 
-
 class CommentsPermission(IsAuthenticatedOrReadOnly):
     """
     Доступ для чтения всем, а для редактирования автору,
     модератору или администратору.
     """
-    print(1)
-
-    def has_permission(self, request, view):
-        print(2)
-        return bool(
-            request.method in SAFE_METHODS or
-            request.user and
-            request.user.is_authenticated
-        )
-
-
 
     def has_object_permission(self, request, view, obj):
         # Используем базовую проверку для безопасных методов
@@ -54,7 +41,6 @@ class CommentsPermission(IsAuthenticatedOrReadOnly):
             # Разрешаем редактирование или удаление, если пользователь автор
             if obj.author == request.user:
                 return True
-            print(obj.author)
             if getattr(request.user, 'is_moderator', False):
                 return True
             if getattr(request.user, 'is_admin', False):
