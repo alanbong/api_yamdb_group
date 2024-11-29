@@ -9,14 +9,16 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
+from django.db.models import Avg, Count
 
 from reviews.models import Category, Title, Genre, Review
 from api.serializers import (
     CategorySerializer, TitleSerializer, GenreSerializer, ReviewSerializer,
-    CommentSerializer, SignupSerializer, TokenSerializer, UserModelSerializer
+    CommentSerializer, SignupSerializer, TokenSerializer, UserModelSerializer,
+    TitleSerializerForRead
 )
 from api.permissions import (
-    IsAdmin, CommentsPermission, IsAdminOrReadOnly, UserMePermissions
+    IsAdmin, IsStuffOrAuthor, IsAdminOrReadOnly, UserMePermissions
 )
 from api.baseviewset import BaseCategoryGenreViewSet
 from api.filtres import TitleFilter
@@ -82,22 +84,37 @@ class TitleViewSet(viewsets.ModelViewSet):
     """Класс произведений."""
 
     queryset = Title.objects.all()
-    serializer_class = TitleSerializer
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    # if http_method_names == 'get':
+    #     serializer_class = TitleSerializerForRead
+    # else:
+    #     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,
                        filters.OrderingFilter, filters.SearchFilter)
     filterset_class = TitleFilter
     search_fields = ('name',)
     lookup_field = 'id'
-    http_method_names = ('get', 'post', 'patch', 'delete')
     ordering_fields = ['name', 'year']
     ordering = ['name']
+
+    def get_serializer_class(self):
+        """Выбор сериализатора в зависимости от метода запроса."""
+        if self.request.method == 'GET':
+            return TitleSerializerForRead
+        return TitleSerializer
+
+    def get_queryset(self):
+        return self.queryset.annotate(
+            rating=Avg('reviews__score', distinct=True),
+            num_reviews=Count('reviews', distinct=True)
+        )
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Класс отзывов."""
 
-    permission_classes = (CommentsPermission,)
+    permission_classes = (IsStuffOrAuthor,)
     serializer_class = ReviewSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title__id',)
@@ -129,7 +146,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """Класс комментов."""
 
-    permission_classes = (CommentsPermission,)
+    permission_classes = (IsStuffOrAuthor,)
     serializer_class = CommentSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('title__id', 'reviews__id')

@@ -154,10 +154,12 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
+    """Сериализатор для записи произведений."""
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
+        allow_null=False,
+        allow_empty=False,
         many=True, required=True)
 
     category = serializers.SlugRelatedField(
@@ -165,7 +167,7 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(),
         required=True)
 
-    rating = serializers.SerializerMethodField()
+    rating = serializers.FloatField(read_only=True)
 
     class Meta:
         model = Title
@@ -190,29 +192,17 @@ class TitleSerializer(serializers.ModelSerializer):
                 'Год выпуска не может быть больше текущего!')
         return value
 
-    def get_rating(self, obj):
-        reviews = obj.reviews.all()
-        num_score = reviews.count()
-        if num_score == 0:
-            return None
-        all_score = sum(review.score for review in reviews)
-        return round(all_score / num_score, 0)
 
-    def to_representation(self, instance):
-        """Переопределяем метод to_representation '
-        'для корректного представления жанров и категорий."""
-        representation = super().to_representation(instance)
+class TitleSerializerForRead(serializers.ModelSerializer):
+    """Сериализатор для просмотра произведений."""
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    rating = serializers.FloatField(read_only=True)
 
-        representation['genre'] = [{"name": genre.name, "slug": genre.slug
-                                    } for genre in instance.genre.all()]
-
-        representation['category'] = {
-            "name": instance.category.name,
-            "slug": instance.category.slug
-        }
-
-        return representation
-
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'rating', 'description', 'genre', 'category')
+    
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов."""
@@ -226,9 +216,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         request = self.context['request']
-        title = self.context['view'].get_title()
         if request.method == 'POST' and Review.objects.filter(
-            author=request.user, title=title
+            author=request.user, title__id=self.context['view'].get_title().id
         ).exists():
             raise ValidationError('Вы уже оставили отзыв на это произведение.')
         return data
