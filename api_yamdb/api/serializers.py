@@ -1,11 +1,14 @@
 import re
 from datetime import datetime
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.core.validators import RegexValidator
+from django.core.mail import send_mail
 from django.db.models import Q
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -46,7 +49,7 @@ class SignupSerializer(serializers.Serializer):
             RegexValidator(
                 regex=r'^[\w.@+-]+\Z',
                 message='Username может содержать только буквы,'
-                ' цифры и символы @/./+/-/_'
+                        ' цифры и символы @/./+/-/_'
             )
         ]
     )
@@ -90,6 +93,35 @@ class SignupSerializer(serializers.Serializer):
 
         return data
 
+    def create(self, validated_data):
+        """
+        Создает пользователя и отправляет confirmation_code.
+        """
+        username = validated_data['username']
+        email = validated_data['email']
+
+        # Создаем или получаем пользователя
+        user, created = User.objects.get_or_create(username=username,
+                                                   email=email)
+
+        # Генерируем код подтверждения
+        confirmation_code = default_token_generator.make_token(user)
+
+        # Отправляем email с кодом подтверждения
+        try:
+            send_mail(
+                subject="Код подтверждения для YaMDB",
+                message=f"Ваш код подтверждения: {confirmation_code}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+            )
+        except Exception as e:
+            raise serializers.ValidationError(
+                f"Ошибка при отправке email: {str(e)}. Попробуйте позже."
+            )
+
+        return user
+
 
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для получения токена."""
@@ -102,6 +134,27 @@ class TokenSerializer(serializers.Serializer):
         required=True,
         help_text="Код подтверждения, отправленный на email."
     )
+
+    def validate(self, data):
+        """
+        Проверяем код подтверждения для указанного пользователя.
+        """
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
+
+        # Получаем пользователя по имени
+        user = User.objects.filter(username=username).first()
+
+        if not user:
+            raise NotFound({'detail':
+                            'Пользователь с таким username не найден.'})
+
+        # Проверяем код подтверждения
+        if not default_token_generator.check_token(user, confirmation_code):
+            raise serializers.ValidationError({'detail':
+                                               'Неверный код подтверждения.'})
+
+        return data
 
 
 class CategorySerializer(serializers.ModelSerializer):
