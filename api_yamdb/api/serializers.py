@@ -100,14 +100,11 @@ class SignupSerializer(serializers.Serializer):
         username = validated_data['username']
         email = validated_data['email']
 
-        # Создаем или получаем пользователя
         user, created = User.objects.get_or_create(username=username,
                                                    email=email)
 
-        # Генерируем код подтверждения
         confirmation_code = default_token_generator.make_token(user)
 
-        # Отправляем email с кодом подтверждения
         try:
             send_mail(
                 subject="Код подтверждения для YaMDB",
@@ -142,14 +139,12 @@ class TokenSerializer(serializers.Serializer):
         username = data.get('username')
         confirmation_code = data.get('confirmation_code')
 
-        # Получаем пользователя по имени
         user = User.objects.filter(username=username).first()
 
         if not user:
             raise NotFound({'detail':
                             'Пользователь с таким username не найден.'})
 
-        # Проверяем код подтверждения
         if not default_token_generator.check_token(user, confirmation_code):
             raise serializers.ValidationError({'detail':
                                                'Неверный код подтверждения.'})

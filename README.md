@@ -72,13 +72,19 @@ api_yamdb
   python manage.py migrate
   ```
 
-6. Запустите проект:
+6. Загрузите .CSV файлы:
+
+  ```
+ python manage.py import_all
+  ```
+
+7. Запустите проект:
 
   ```
   python manage.py runserver
   ```
   
-7. Опционально. После запуска сервера полная версия документации доступна будет доступна [здесь](http://127.0.0.1:8000/redoc/)
+8. Опционально. После запуска сервера полная версия документации доступна будет доступна [здесь](http://127.0.0.1:8000/redoc/)
 
 ### Примеры запросов к API:
 
@@ -124,3 +130,16 @@ DELETE http://127.0.0.1:8000/api/v1/titles/{titles_id}/
 ```
 GET http://127.0.0.1:8000/api/v1/titles/{title_id}/reviews/
 ```
+
+## Технологии
+* Python - версия 3.9.13
+* Django — основной фреймворк для разработки.
+* Django REST Framework — для создания API.
+* SQLite3 (рекомендуется) — в качестве базы данных.
+* JWT — для аутентификации пользователей.
+## Авторы
+Проект разработан:
+* [Dauletnazar Mambetnazarov.](https://github.com/Dauletnazarr/)
+* [Denis Bochkarev.](https://github.com/alanbong)
+* [Ludmila Usacheva](https://github.com/Lusya4400)
+* [Danil Tyapugin](https://github.com/DanilTyapugin)
