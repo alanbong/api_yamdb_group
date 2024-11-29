@@ -1,8 +1,4 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
-from django.forms import ValidationError
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -39,7 +35,8 @@ class UserModelViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
-    @action(detail=False, methods=['get', 'patch'], permission_classes=[UserMePermissions])
+    @action(detail=False, methods=['get', 'patch'],
+            permission_classes=[UserMePermissions])
     def me(self, request):
         """Эндпоинт для изменения профиля текущего пользователя."""
         user = self.request.user
@@ -47,7 +44,8 @@ class UserModelViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(user)
             return Response(serializer.data)
         elif request.method == 'PATCH':
-            serializer = self.get_serializer(user, data=request.data, partial=True)
+            serializer = self.get_serializer(user,
+                                             data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.validated_data.pop('role', None)
             serializer.save()
@@ -139,18 +137,18 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_review(self):
         """Возвращает объект Review по 'review_id'."""
-        return get_object_or_404(Review, id=self.kwargs['review_id'])
-
-    def get_title(self):
-        return get_object_or_404(Title, id=self.kwargs['title_id'])
+        return get_object_or_404(Review, id=self.kwargs['review_id'],
+                                 title_id=self.kwargs.get('title_id'))
 
     def get_queryset(self):
         return self.get_review().comments.all()
 
     def perform_create(self, serializer):
+        review = self.get_review()
         serializer.save(
-            author=self.request.user, review=self.get_review(),
-            title=self.get_title()
+            author=self.request.user,
+            review=review,
+            title=review.title
         )
 
 
@@ -161,12 +159,9 @@ class SignupView(APIView):
 
     def post(self, request):
         serializer = SignupSerializer(data=request.data)
-
-        # Проверяем данные и сохраняем пользователя
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()  # Метод create вызывается здесь
+        user = serializer.save()
 
-        # Возвращаем ответ с данными пользователя
         return Response(
             {"username": user.username, "email": user.email},
             status=status.HTTP_200_OK

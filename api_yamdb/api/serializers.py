@@ -101,7 +101,8 @@ class SignupSerializer(serializers.Serializer):
         email = validated_data['email']
 
         # Создаем или получаем пользователя
-        user, created = User.objects.get_or_create(username=username, email=email)
+        user, created = User.objects.get_or_create(username=username,
+                                                   email=email)
 
         # Генерируем код подтверждения
         confirmation_code = default_token_generator.make_token(user)
@@ -145,11 +146,13 @@ class TokenSerializer(serializers.Serializer):
         user = User.objects.filter(username=username).first()
 
         if not user:
-            raise NotFound({'detail': 'Пользователь с таким username не найден.'})
+            raise NotFound({'detail':
+                            'Пользователь с таким username не найден.'})
 
         # Проверяем код подтверждения
         if not default_token_generator.check_token(user, confirmation_code):
-            raise serializers.ValidationError({'detail': 'Неверный код подтверждения.'})
+            raise serializers.ValidationError({'detail':
+                                               'Неверный код подтверждения.'})
 
         return data
 

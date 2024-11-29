@@ -1,6 +1,7 @@
 from rest_framework import viewsets, mixins, filters
 from .permissions import IsAdminOrReadOnly
 
+
 class BaseCategoryGenreViewSet(mixins.ListModelMixin,
                                mixins.CreateModelMixin,
                                mixins.DestroyModelMixin,
