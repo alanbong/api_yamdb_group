@@ -1,11 +1,12 @@
 """Настройки администратора"""
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
 from .models import UserModel, Category, Genre, Title
 
 
 @admin.register(UserModel)
-class UserModelAdmin(admin.ModelAdmin):
+class UserModelAdmin(UserAdmin):
     list_display = ('username', 'email', 'role', 'bio', 'is_staff')
     list_filter = ('role', 'is_staff', 'is_superuser')
     search_fields = ('username', 'email')

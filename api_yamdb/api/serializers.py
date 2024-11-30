@@ -11,9 +11,9 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import (
     Category, Comment, Genre,
-    Review, Title, validate_username
+    Review, Title,
 )
-
+from reviews.validators import validate_username
 
 User = get_user_model()
 

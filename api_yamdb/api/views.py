@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
-from django.db.models import Avg, Count
+from django.db.models import Avg
 
 from reviews.models import Category, Title, Genre, Review
 from api.serializers import (
@@ -37,8 +37,8 @@ class UserModelViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
 
-    @action(detail=False, methods=['get', 'patch'],
-            permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=('get', 'patch'),
+            permission_classes=(IsAuthenticated,))
     def me(self, request):
         """Эндпоинт для изменения профиля текущего пользователя."""
         user = self.request.user
@@ -83,7 +83,9 @@ class GenreViewSet(BaseCategoryGenreViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """Класс произведений."""
 
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    )
     http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,
@@ -98,12 +100,6 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.request.method == 'GET':
             return TitleSerializerForRead
         return TitleSerializer
-
-    def get_queryset(self):
-        return self.queryset.annotate(
-            rating=Avg('reviews__score', distinct=True),
-            num_reviews=Count('reviews', distinct=True)
-        )
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -160,7 +156,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(
             author=self.request.user,
             review=review,
-            title=review.title
         )
 
 

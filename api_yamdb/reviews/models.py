@@ -1,4 +1,3 @@
-import re
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
@@ -7,8 +6,11 @@ from django.db import models
 from django.db.models import UniqueConstraint
 
 from .constants import (
-    MAX_LENGTH_256, MAX_LENGTH_50, USER_ROLE, MODERATOR_ROLE, ADMIN_ROLE
+    MAX_LENGTH_256, MAX_LENGTH_150, MAX_LENGTH_50,
+    USER_ROLE, MODERATOR_ROLE, ADMIN_ROLE,
+    MIN_VALUE, MAX_VALUE
 )
+from .validators import validate_username
 
 
 ROLE_CHOICES = [
@@ -16,16 +18,6 @@ ROLE_CHOICES = [
     (MODERATOR_ROLE, 'Moderator'),
     (ADMIN_ROLE, 'Admin'),
 ]
-
-
-def validate_username(username):
-    if username.lower() == 'me':
-        raise ValidationError(
-            "Нельзя использовать 'me' в качестве имени пользователя.")
-
-    if not re.match(r'^[\w]+$', username):
-        raise ValidationError("Имя пользователя может содержать только буквы, "
-                              "цифры и подчеркивания.")
 
 
 class UserModel(AbstractUser):
@@ -45,7 +37,7 @@ class UserModel(AbstractUser):
         verbose_name='Email'
     )
     username = models.CharField(
-        max_length=150,
+        max_length=MAX_LENGTH_150,
         unique=True,
         validators=[validate_username],
         verbose_name='Username'
@@ -65,7 +57,7 @@ class UserModel(AbstractUser):
         ordering = ['username']
 
     def __str__(self):
-        return self.username
+        return str(self.username)
 
 
 class NameSlugModel(models.Model):
@@ -78,23 +70,22 @@ class NameSlugModel(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ['name']
 
     def __str__(self):
-        return self.name[:MAX_LENGTH_50]
+        return str(self.name)[:MAX_LENGTH_50]
 
 
 class Category(NameSlugModel):
-    class Meta:
+    class Meta(NameSlugModel.Meta):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
-        ordering = ['name']
 
 
 class Genre(NameSlugModel):
-    class Meta:
+    class Meta(NameSlugModel.Meta):
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
-        ordering = ['name']
 
 
 class Title(models.Model):
@@ -125,7 +116,7 @@ class Title(models.Model):
         ordering = ['category', 'name', 'year']
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 
 class Review(models.Model):
@@ -133,8 +124,8 @@ class Review(models.Model):
                               on_delete=models.CASCADE,
                               verbose_name='Произведение')
     text = models.CharField(max_length=MAX_LENGTH_256, verbose_name='Название')
-    score = models.IntegerField(validators=[MinValueValidator(1),
-                                            MaxValueValidator(10)])
+    score = models.IntegerField(validators=[MinValueValidator(MIN_VALUE),
+                                            MaxValueValidator(MAX_VALUE)])
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -168,9 +159,6 @@ class Review(models.Model):
 
 class Comment(models.Model):
     text = models.TextField(verbose_name='Текст комментария')
-    title = models.ForeignKey(Title, related_name='comments',
-                              on_delete=models.CASCADE,
-                              verbose_name='Произведение')
     review = models.ForeignKey(Review, related_name='comments',
                                on_delete=models.CASCADE,
                                verbose_name='Отзыв')
