@@ -72,8 +72,8 @@ class SignupSerializer(serializers.Serializer):
         username = validated_data['username']
         email = validated_data['email']
 
-        user, created = User.objects.get_or_create(username=username,
-                                                   email=email)
+        user, _ = User.objects.get_or_create(username=username,
+                                             email=email)
 
         confirmation_code = default_token_generator.make_token(user)
 
@@ -151,6 +151,18 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
 
 
+class TitleSerializerForRead(serializers.ModelSerializer):
+    """Сериализатор для просмотра произведений."""
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    rating = serializers.IntegerField(read_only=True, default=None)
+
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
+
+
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для записи произведений."""
     genre = serializers.SlugRelatedField(
@@ -165,12 +177,10 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(),
         required=True)
 
-    rating = serializers.FloatField(read_only=True)
-
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating',
+            'id', 'name', 'year',
             'description', 'genre', 'category')
 
         validators = [
@@ -190,17 +200,9 @@ class TitleSerializer(serializers.ModelSerializer):
                 'Год выпуска не может быть больше текущего!')
         return value
 
-
-class TitleSerializerForRead(serializers.ModelSerializer):
-    """Сериализатор для просмотра произведений."""
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
-    rating = serializers.FloatField(read_only=True)
-
-    class Meta:
-        model = Title
-        fields = ('id', 'name', 'year', 'rating',
-                  'description', 'genre', 'category')
+    def to_representation(self, instance):
+        """Формирование ответа с использованием TitleSerializerForRead."""
+        return TitleSerializerForRead(instance).data
 
 
 class ReviewSerializer(serializers.ModelSerializer):

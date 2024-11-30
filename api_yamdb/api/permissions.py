@@ -40,17 +40,3 @@ class IsStuffOrAuthor(IsAuthenticatedOrReadOnly):
                 or request.user.is_admin
                 or obj.author == request.user
             )
-
-
-class UserMePermissions(AllowAny):
-
-    def has_permission(self, request, view):
-        if request.method in ('POST', 'PATCH'):
-            return request.user.is_authenticated and (
-                request.user.role in ('user', 'moderator', 'admin')
-            )
-
-        if request.user.is_authenticated:
-            return request.user.role == 'user'
-
-        return False

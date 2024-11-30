@@ -5,7 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
@@ -18,7 +18,7 @@ from api.serializers import (
     TitleSerializerForRead
 )
 from api.permissions import (
-    IsAdmin, IsStuffOrAuthor, IsAdminOrReadOnly, UserMePermissions
+    IsAdmin, IsStuffOrAuthor, IsAdminOrReadOnly
 )
 from api.baseviewset import BaseCategoryGenreViewSet
 from api.filtres import TitleFilter
@@ -31,14 +31,14 @@ class UserModelViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
     queryset = User.objects.all()
     serializer_class = UserModelSerializer
-    permission_classes = [IsAdmin]
-    filter_backends = [SearchFilter]
-    search_fields = ['username', 'email']
+    permission_classes = (IsAdmin,)
+    filter_backends = (SearchFilter,)
+    search_fields = ('username', 'email')
     lookup_field = 'username'
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
 
     @action(detail=False, methods=['get', 'patch'],
-            permission_classes=[UserMePermissions])
+            permission_classes=[IsAuthenticated])
     def me(self, request):
         """Эндпоинт для изменения профиля текущего пользователя."""
         user = self.request.user
@@ -85,18 +85,13 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.all()
     http_method_names = ('get', 'post', 'patch', 'delete')
-    # if http_method_names == 'get':
-    #     serializer_class = TitleSerializerForRead
-    # else:
-    #     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,
                        filters.OrderingFilter, filters.SearchFilter)
     filterset_class = TitleFilter
     search_fields = ('name',)
-    lookup_field = 'id'
-    ordering_fields = ['name', 'year']
-    ordering = ['name']
+    ordering_fields = ('name', 'year')
+    ordering = ('name',)
 
     def get_serializer_class(self):
         """Выбор сериализатора в зависимости от метода запроса."""
