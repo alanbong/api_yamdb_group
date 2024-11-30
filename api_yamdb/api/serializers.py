@@ -1,17 +1,18 @@
-import re
 from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.core.validators import RegexValidator
 from django.core.mail import send_mail
 from django.db.models import Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import Category, Comment, Genre, Review, Title
+from reviews.models import (
+    Category, Comment, Genre,
+    Review, Title, validate_username
+)
 
 
 User = get_user_model()
@@ -25,44 +26,14 @@ class UserModelSerializer(serializers.ModelSerializer):
         fields = (
             'username', 'email', 'role', 'bio', 'first_name', 'last_name')
 
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                'Использовать имя "me" запрещено.')
-        if len(value) > 150:
-            raise serializers.ValidationError(
-                'Имя не должно быть длиннее 150 символов.')
-        if not re.match(r'^[\w.@+-]+\Z', value):
-            raise serializers.ValidationError(
-                'Username может содержать только буквы,'
-                ' цифры и символы @/./+/-/_'
-            )
-        return value
-
 
 class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254, required=True)
     username = serializers.CharField(
         max_length=150,
         required=True,
-        validators=[
-            RegexValidator(
-                regex=r'^[\w.@+-]+\Z',
-                message='Username может содержать только буквы,'
-                        ' цифры и символы @/./+/-/_'
-            )
-        ]
+        validators=[validate_username],
     )
-
-    def validate_username(self, value):
-        """
-        Проверяем, что username не является зарезервированным.
-        """
-        if value == "me":
-            raise serializers.ValidationError(
-                "Имя пользователя 'me' использовать нельзя."
-            )
-        return value
 
     def validate(self, data):
         """
@@ -72,24 +43,25 @@ class SignupSerializer(serializers.Serializer):
         """
         username = data.get('username')
         email = data.get('email')
+        errors = {}
 
         user = User.objects.filter(
-            Q(username=username) | Q(email=email)).first()
+            Q(username=username) | Q(email=email)
+        ).first()
 
+        #  Пожалуйста, сообщи как это можно сделать элегантней
         if user:
             if user.username != username and user.email == email:
-                raise serializers.ValidationError(
-                    {"email": "Этот email уже используется с другим username."}
-                )
-
+                errors["email"] = [
+                    "Этот email уже используется с другим username."
+                ]
             if user.email != email and user.username == username:
-                raise serializers.ValidationError(
-                    {"username":
-                     "Этот username уже используется с другим email."}
-                )
+                errors["username"] = [
+                    "Этот username уже используется с другим email."
+                ]
 
-            if user.username == username and user.email == email:
-                return data
+        if errors:
+            raise serializers.ValidationError(errors)
 
         return data
 
@@ -100,8 +72,8 @@ class SignupSerializer(serializers.Serializer):
         username = validated_data['username']
         email = validated_data['email']
 
-        user, created = User.objects.get_or_create(username=username,
-                                                   email=email)
+        user, _ = User.objects.get_or_create(username=username,
+                                             email=email)
 
         confirmation_code = default_token_generator.make_token(user)
 
@@ -179,11 +151,25 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
 
 
+class TitleSerializerForRead(serializers.ModelSerializer):
+    """Сериализатор для просмотра произведений."""
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    rating = serializers.IntegerField(read_only=True, default=None)
+
+    class Meta:
+        model = Title
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
+
+
 class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
+    """Сериализатор для записи произведений."""
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
+        allow_null=False,
+        allow_empty=False,
         many=True, required=True)
 
     category = serializers.SlugRelatedField(
@@ -191,12 +177,10 @@ class TitleSerializer(serializers.ModelSerializer):
         queryset=Category.objects.all(),
         required=True)
 
-    rating = serializers.SerializerMethodField()
-
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating',
+            'id', 'name', 'year',
             'description', 'genre', 'category')
 
         validators = [
@@ -216,28 +200,9 @@ class TitleSerializer(serializers.ModelSerializer):
                 'Год выпуска не может быть больше текущего!')
         return value
 
-    def get_rating(self, obj):
-        reviews = obj.reviews.all()
-        num_score = reviews.count()
-        if num_score == 0:
-            return None
-        all_score = sum(review.score for review in reviews)
-        return round(all_score / num_score, 0)
-
     def to_representation(self, instance):
-        """Переопределяем метод to_representation '
-        'для корректного представления жанров и категорий."""
-        representation = super().to_representation(instance)
-
-        representation['genre'] = [{"name": genre.name, "slug": genre.slug
-                                    } for genre in instance.genre.all()]
-
-        representation['category'] = {
-            "name": instance.category.name,
-            "slug": instance.category.slug
-        }
-
-        return representation
+        """Формирование ответа с использованием TitleSerializerForRead."""
+        return TitleSerializerForRead(instance).data
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -252,9 +217,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         request = self.context['request']
-        title = self.context['view'].get_title()
         if request.method == 'POST' and Review.objects.filter(
-            author=request.user, title=title
+            author=request.user, title__id=self.context['view'].get_title().id
         ).exists():
             raise ValidationError('Вы уже оставили отзыв на это произведение.')
         return data

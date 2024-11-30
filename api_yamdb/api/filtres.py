@@ -6,7 +6,6 @@ from reviews.models import Title
 class TitleFilter(django_filters.FilterSet):
     """Фильтрация произведений по полям года, жанра и категории."""
 
-    year = django_filters.NumberFilter(field_name='year')
     name = django_filters.CharFilter(field_name='name',
                                      lookup_expr='icontains')
     genre = django_filters.CharFilter(field_name='genre__slug',
