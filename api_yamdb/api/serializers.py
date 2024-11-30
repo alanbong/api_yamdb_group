@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
@@ -14,6 +12,7 @@ from reviews.models import (
     Review, Title,
 )
 from reviews.validators import validate_username
+from reviews.constants import MAX_LENGTH_150
 
 User = get_user_model()
 
@@ -30,7 +29,7 @@ class UserModelSerializer(serializers.ModelSerializer):
 class SignupSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254, required=True)
     username = serializers.CharField(
-        max_length=150,
+        max_length=MAX_LENGTH_150,
         required=True,
         validators=[validate_username],
     )
@@ -95,7 +94,7 @@ class SignupSerializer(serializers.Serializer):
 class TokenSerializer(serializers.Serializer):
     """Сериализатор для получения токена."""
     username = serializers.CharField(
-        max_length=150,
+        max_length=MAX_LENGTH_150,
         required=True,
         help_text="Укажите username."
     )
@@ -191,14 +190,6 @@ class TitleSerializer(serializers.ModelSerializer):
                 'присутствует в указанной категории!'
             )
         ]
-
-    def validate_year(self, value):
-        """Проверка, что год выпуска не больше текущего."""
-        current_year = datetime.now().year
-        if value > current_year:
-            raise serializers.ValidationError(
-                'Год выпуска не может быть больше текущего!')
-        return value
 
     def to_representation(self, instance):
         """Формирование ответа с использованием TitleSerializerForRead."""

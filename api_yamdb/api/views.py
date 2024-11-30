@@ -45,13 +45,13 @@ class UserModelViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(user)
             return Response(serializer.data)
-        elif request.method == 'PATCH':
-            serializer = self.get_serializer(user,
-                                             data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.validated_data.pop('role', None)
-            serializer.save()
-            return Response(serializer.data)
+
+        serializer = self.get_serializer(user,
+                                         data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.validated_data.pop('role', None)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class CategoryViewSet(BaseCategoryGenreViewSet):
@@ -60,24 +60,12 @@ class CategoryViewSet(BaseCategoryGenreViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
-    def get_queryset(self):
-        return self.queryset
-
-    def get_serializer_class(self):
-        return self.serializer_class
-
 
 class GenreViewSet(BaseCategoryGenreViewSet):
     """Класс жанров."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-
-    def get_queryset(self):
-        return self.queryset
-
-    def get_serializer_class(self):
-        return self.serializer_class
 
 
 class TitleViewSet(viewsets.ModelViewSet):

@@ -10,7 +10,7 @@ from .constants import (
     USER_ROLE, MODERATOR_ROLE, ADMIN_ROLE,
     MIN_VALUE, MAX_VALUE
 )
-from .validators import validate_username
+from .validators import validate_username, validate_year
 
 
 ROLE_CHOICES = [
@@ -103,7 +103,8 @@ class Title(models.Model):
     name = models.CharField(max_length=MAX_LENGTH_256)
     description = models.TextField(
         blank=True, verbose_name='Описание')
-    year = models.IntegerField(verbose_name='Год публикации')
+    year = models.IntegerField(verbose_name='Год публикации',
+                               validators=[validate_year])
 
     class Meta:
         verbose_name = 'Произведение'
