@@ -21,7 +21,7 @@ REST API для платформы YaMDb, где пользователи ост
 1. Клонируйте репозиторий и перейдите в него в командной строке:
 
   ```
-  git clone git@github.com:Dauletnazarr/api_yamdb.git
+  git clone https://github.com/alanbong/api_yamdb_group.git
   ```
 
   ```
